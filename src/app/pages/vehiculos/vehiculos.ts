@@ -19,7 +19,7 @@ export class ListaVehiculosComponent implements OnInit {
   public vehiculosFiltrados: any[] = []; 
   public filtro: string = ''; 
 
-  private apiUrl = 'http://localhost:3000/api/vehiculos';
+  private apiUrl = 'https://makand-sas.onrender.com/api/vehiculos';
 
   // Usamos exactamente los mismos nombres del modelo de Node.js
   vehiculo: any = {

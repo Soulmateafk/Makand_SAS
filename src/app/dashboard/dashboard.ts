@@ -44,7 +44,7 @@ export class dashboard implements AfterViewInit, OnInit {
   };
 
   public errorPlaca: string = ''; 
-  private baseApiUrl = 'http://localhost:3000/api'; 
+  private baseApiUrl = 'https://makand-sas.onrender.com/api'; 
 
   private lineChart: any;
   private doughnutChart: any;

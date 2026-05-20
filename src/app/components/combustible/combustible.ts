@@ -22,7 +22,7 @@ export class CombustibleComponent implements OnInit {
   public errorPlaca: string = '';
 
   // API URL conectada al backend de MongoDB
-  private apiUrl = 'http://localhost:3000/api/combustible';
+  private apiUrl = 'https://makand-sas.onrender.com/api/combustible';
 
   // Opciones del formulario
   public listaMetodosPago: string[] = ['Efectivo', 'Tarjeta', 'Chip Corporativo', 'Vale'];
@@ -135,7 +135,7 @@ export class CombustibleComponent implements OnInit {
 
   // REPORTE GENERAL: Descarga todo el histórico sin filtros
   exportarExcelGeneral() {
-    const exportUrl = 'http://localhost:3000/api/combustibles/exportar-excel';
+    const exportUrl = 'https://makand-sas.onrender.com/api/combustibles/exportar-excel';
     if (isPlatformBrowser(this.platformId)) {
       window.open(exportUrl, '_blank');
     }
@@ -145,7 +145,7 @@ export class CombustibleComponent implements OnInit {
   exportarExcelEspecifico() {
     const busqueda = this.searchTerm ? this.searchTerm.trim() : '';
     const queryParam = busqueda ? `?buscar=${encodeURIComponent(busqueda)}` : '';
-    const exportUrl = `http://localhost:3000/api/combustibles/exportar-excel${queryParam}`;
+    const exportUrl = `https://makand-sas.onrender.com/api/combustibles/exportar-excel${queryParam}`;
     
     if (isPlatformBrowser(this.platformId)) {
       window.open(exportUrl, '_blank');

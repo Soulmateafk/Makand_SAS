@@ -37,7 +37,7 @@ export class MapaEntregasComponent implements AfterViewInit {
       'Authorization': `Bearer ${token}`
     });
 
-    this.http.get<any[]>('http://localhost:3000/api/mapa', { headers }).subscribe({
+    this.http.get<any[]>('https://makand-sas.onrender.com/api/mapa', { headers }).subscribe({
       next: (data) => {
         console.log("Datos recibidos de /api/mapa:", data);
         this.pintarMarcadores(data);

@@ -15,7 +15,7 @@ export class AlertasComponent implements OnInit {
   public alertasProximas: any[] = [];  // Amarillo: Vencen pronto
   public flotaAlDia: number = 0;
 
-  private apiUrl = 'http://localhost:3000/api/mantenimiento';
+  private apiUrl = 'https://makand-sas.onrender.com/api/mantenimiento';
 
   constructor(private http: HttpClient) {}
 

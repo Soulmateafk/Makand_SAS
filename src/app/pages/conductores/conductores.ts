@@ -16,7 +16,7 @@ export class ConductoresComponent implements OnInit {
   public editIndex: number | null = null;
   public intentoGuardar: boolean = false;
   
-  private apiUrl = 'http://localhost:3000/api/conductores';
+  private apiUrl = 'https://makand-sas.onrender.com/api/conductores';
 
   public registro: any = {
     nombre: '',

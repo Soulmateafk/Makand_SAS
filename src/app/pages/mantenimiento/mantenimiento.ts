@@ -25,7 +25,7 @@ export class MantenimientoComponent implements OnInit {
   public itemSeleccionado: any = null;
 
   // Ajustado a singular para coincidir con la ruta más estable del backend
-  private apiUrl = 'http://localhost:3000/api/mantenimiento'; 
+  private apiUrl = 'https://makand-sas.onrender.com/api/mantenimiento'; 
   private chart: any; 
 
   public registro: any = {

@@ -27,7 +27,7 @@ export class Entregas implements OnInit, AfterViewInit {
   public filtroPlaca: string = ''; 
   public errorPlaca: string = ''; 
 
-  private apiUrl = 'http://localhost:3000/api/entregas';
+  private apiUrl = 'https://makand-sas.onrender.com/api/entregas';
 
   public anioSeleccionado: number = 2026; 
   public semanaSeleccionada: number = 0;
