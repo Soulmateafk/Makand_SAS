@@ -40,12 +40,12 @@ mongoose.connect(mongoURI)
   });
 // -----------------------------------------------------------
 
-const Formulario = require('./models/Entrega'); 
+const Formulario = require('./models/entrega'); 
 const Vehiculo = require('./models/Vehiculo');
 const Conductor = require('./models/Conductor');
 const Mantenimiento = require('./models/Mantenimiento');
 const Usuario = require('./models/Usuario');
-const { Combustible } = require('./models/Combustible'); 
+const { Combustible } = require('./models/combustible'); 
 
 // ==========================================
 // RUTA: LOGIN (CORREGIDA Y SEGURA)
