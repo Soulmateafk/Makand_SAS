@@ -5,7 +5,11 @@ const helmet = require('helmet'); // Seguridad adicional
 const mongoose = require('mongoose'); 
 const jwt = require('jsonwebtoken');
 const app = express();
-const port = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log(`Servidor corriendo en el puerto ${PORT}`);
+});
 
 // 🛡️ IMPORTAR EL VIGILANTE DE SEGURIDAD (MIDDLEWARE)
 const verificarAuth = require('./middlewares/auth');
