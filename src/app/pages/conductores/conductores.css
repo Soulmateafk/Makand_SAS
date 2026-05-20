@@ -1,0 +1,39 @@
+.formulario-container { padding: 20px; background-color: #f4f7f6; min-height: 100vh; }
+.form-card { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); max-width: 1100px; margin: 0 auto; }
+.form-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+.form-header h2 { color: #481165; margin: 0; }
+
+.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+.group { display: flex; flex-direction: column; }
+label { font-weight: 600; margin-bottom: 8px; color: #481165; font-size: 0.9rem; }
+input { padding: 12px; border: 1px solid #ddd; border-radius: 10px; font-size: 1rem; }
+input:focus { border-color: #6b0f9c; outline: none; box-shadow: 0 0 0 3px rgba(107, 15, 156, 0.1); }
+
+.invalid-field { border: 2px solid #ef4444 !important; background-color: #fef2f2; }
+
+.btn-save { width: 100%; background: #380c50; color: white; padding: 14px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 25px; transition: 1s; }
+.btn-save:hover { background: #9108db; transform: translateY(-2px); }
+
+.btn-new { background: #1d6f42; color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; }
+
+/* TABLA DINÁMICA */
+.table-container { margin-top: 40px; border-top: 2px solid #f0f0f0; padding-top: 25px; }
+.table-container h3 { color: #481165; margin-bottom: 15px; }
+
+/* Scroll horizontal si hay muchos datos */
+.table-scroll { overflow-x: auto; border-radius: 12px; border: 1px solid #eee; }
+
+table { width: 100%; border-collapse: collapse; background: white; min-width: 900px; }
+th { background: #f8f9fa; text-align: left; padding: 15px; color: #6b0f9c; font-size: 0.85rem; text-transform: uppercase; }
+td { padding: 15px; border-bottom: 1px solid #eee; font-size: 0.85rem; color: #444; }
+
+.font-bold { font-weight: bold; color: #222; }
+
+.action-cells { display: flex; gap: 8px; }
+.btn-icon-edit, .btn-icon-delete { border: none; border-radius: 6px; cursor: pointer; padding: 8px; transition: 1s; }
+.btn-icon-edit { background: #f3e8ff; color: #6b0f9c; }
+.btn-icon-delete { background: #fee2e2; color: #dc2626; }   
+.btn-icon-edit:hover { background: #6b0f9c; color: white; }
+.btn-icon-delete:hover { background: #dc2626; color: rgb(255, 255, 255); }
+.btn-eliminar { background: #ffffff; color: rgb(255, 0, 0); border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; transition: 1s;}
+.btn-eliminar:hover { background: #dc2626; color: white; }

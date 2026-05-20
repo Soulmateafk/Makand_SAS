@@ -1,12 +1,18 @@
-import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
+import { ApplicationConfig } from '@angular/core';
 import { provideRouter } from '@angular/router';
-
 import { routes } from './app.routes';
-import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
+// 1. Añadimos 'withFetch' a los imports
+import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
+// 🔑 Tu interceptor se mantiene igual
+import { authInterceptor } from './login/auth.interceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideBrowserGlobalErrorListeners(),
-    provideRouter(routes), provideClientHydration(withEventReplay())
+    // 2. Combinamos ambos: withFetch() y withInterceptors() dentro de provideHttpClient
+    provideHttpClient(
+      withFetch(), 
+      withInterceptors([authInterceptor])
+    ),
+    provideRouter(routes)
   ]
 };

@@ -1,0 +1,156 @@
+<div class="container-fluid p-4">
+  <div class="row align-items-center mb-4">
+    <div class="col-md-6">
+      <h2 class="title-modulo"><i class="bi bi-fuel-pump"></i> Control de Combustible y Eficiencia</h2>
+      <p class="text-muted">Monitoreo de consumo de gasolina, rendimiento de kilómetros por galón y costos de la flota.</p>
+    </div>
+    <div class="col-md-6 text-md-end">
+      <button class="btn btn-purple" (click)="mostrarForm = !mostrarForm">
+        <i class="bi" [ngClass]="mostrarForm ? 'bi-eye-slash' : 'bi-plus-circle'"></i>
+        {{ mostrarForm ? 'Ocultar Formulario' : 'Registrar Nuevo Tanqueo' }}
+      </button>
+    </div>
+  </div>
+
+  <div class="card card-custom mb-4" *ngIf="mostrarForm">
+    <div class="card-header-custom">
+      <h5>{{ editandoId ? 'Modificar Registro de Combustible' : 'Registrar Datos de Tanqueo' }}</h5>
+    </div>
+    <div class="card-body">
+      <form (ngSubmit)="guardarTanqueo()">
+        <div class="row g-3">
+          <div class="col-md-3">
+            <label class="form-label fw-bold">Placa del Vehículo</label>
+            <input type="text" class="form-control text-uppercase" [(ngModel)]="nuevoTanqueo.placa" name="placa" required placeholder="Ej: LUN123">
+            <div class="text-danger small mt-1" *ngIf="errorPlaca">{{ errorPlaca }}</div>
+          </div>
+          <div class="col-md-5">
+            <label class="form-label fw-bold">Conductor Asignado</label>
+            <input type="text" class="form-control" [(ngModel)]="nuevoTanqueo.conductor" name="conductor" required placeholder="Nombre del conductor">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-bold">Fecha de Tanqueo</label>
+            <input type="date" class="form-control" [(ngModel)]="nuevoTanqueo.fecha" name="fecha" required>
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label fw-bold">Kilometraje Actual (KM)</label>
+            <input type="number" class="form-control" [(ngModel)]="nuevoTanqueo.kmActual" name="kmActual" required min="0">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-bold">Cantidad (Galones)</label>
+            <input type="number" step="0.01" class="form-control" [(ngModel)]="nuevoTanqueo.galones" name="galones" required min="0.1">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-bold">Valor Total Pagado ($)</label>
+            <input type="number" class="form-control" [(ngModel)]="nuevoTanqueo.precioTotal" name="precioTotal" required min="0" placeholder="Pesos Colombianos">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-bold">Método de Pago</label>
+            <select class="form-select" [(ngModel)]="nuevoTanqueo.metodoPago" name="metodoPago">
+              <option *ngFor="let metodo of listaMetodosPago" [value]="metodo">{{ metodo }}</option>
+            </select>
+          </div>
+
+          <div class="col-md-12">
+            <label class="form-label fw-bold">Estación de Servicio (EDS) / Ubicación</label>
+            <input type="text" class="form-control" [(ngModel)]="nuevoTanqueo.estacionServicio" name="estacionServicio" placeholder="Ej: Terpel Autopista Medellín">
+          </div>
+
+          <div class="col-md-12 text-end mt-4">
+            <button type="button" class="btn btn-secondary me-2" (click)="finalizarFormulario()">Cancelar</button>
+            <button type="submit" class="btn btn-purple-submit">{{ editandoId ? 'Actualizar Registro' : 'Guardar en Base de Datos' }}</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="row mb-3 align-items-center">
+    <div class="col-md-6 col-lg-4">
+      <div class="input-group">
+        <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+        <input type="text" class="form-control border-start-0 ps-0" placeholder="Buscar por placa, conductor o EDS..." [(ngModel)]="searchTerm" (input)="filtrarTanqueos()">
+      </div>
+    </div>
+    
+    <!-- Modificación en este contenedor para incluir ambos botones manteniendo el orden visual -->
+    <div class="col-md-6 col-lg-8 text-md-end mt-2 mt-md-0 d-flex justify-content-md-end align-items-center gap-2">
+      <!-- Botón para exportar solo los datos que coinciden con el término del input (Específico) -->
+      <button class="btn btn-primary" (click)="exportarExcelEspecifico()" [disabled]="tanqueosFiltrados.length === 0">
+        <i class="bi bi-funnel"></i> Exportar Filtro
+      </button>
+
+      <!-- Botón antiguo renombrado para mantener la exportación general (General) -->
+      <button class="btn btn-success" (click)="exportarExcelGeneral()">
+        <i class="bi bi-file-earmark-excel"></i> Exportar Todo
+      </button>
+      
+      <span class="badge bg-light text-dark border p-2 m-0">Mostrando: {{ tanqueosFiltrados.length }} registros</span>
+    </div>
+  </div>
+
+  <div class="card card-custom">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Placa</th>
+            <th>Conductor</th>
+            <th class="text-end">KM Registro</th>
+            <th class="text-end">KM Recorridos</th>
+            <th class="text-end">Galones</th>
+            <th class="text-end">Valor Total</th>
+            <th class="text-center">Rendimiento Real</th>
+            <th class="text-end">Costo/KM</th>
+            <th>Estación de Servicio</th>
+            <th class="text-center">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of tanqueosFiltrados">
+            <td class="fw-semibold text-secondary">{{ item.fecha | date:'dd/MM/yyyy' }}</td>
+            <td><span class="badge-placa">{{ item.placa }}</span></td>
+            <td class="fw-bold text-dark">{{ item.conductor }}</td>
+            <td class="text-end fw-semibold">{{ item.kmActual | number }} km</td>
+            <td class="text-end text-primary fw-bold">
+              {{ item.kmRecorridos > 0 ? (item.kmRecorridos | number) + ' km' : '---' }}
+            </td>
+            <td class="text-end font-numeric">{{ item.galones | number:'1.1-2' }} Gl</td>
+            <td class="text-end fw-bold text-success">${{ item.precioTotal | number }}</td>
+            
+            <td class="text-center">
+              <span *ngIf="item.rendimientoKmpg === 0" class="badge bg-secondary p-2">Primer registro</span>
+              <span *ngIf="item.rendimientoKmpg > 0" class="badge p-2 font-numeric" 
+                    [ngClass]="item.rendimientoKmpg >= 35 ? 'bg-success-light text-success' : 'bg-danger-light text-danger'">
+                <i class="bi" [ngClass]="item.rendimientoKmpg >= 35 ? 'bi-arrow-up-right' : 'bi-arrow-down-right'"></i>
+                {{ item.rendimientoKmpg | number:'1.1-1' }} Km/Gl
+              </span>
+            </td>
+
+            <td class="text-end text-muted font-numeric">
+              {{ item.costoPorKm > 0 ? '$' + (item.costoPorKm | number:'1.0-0') : '---' }}
+            </td>
+            <td class="text-truncate" style="max-width: 180px;" title="{{ item.estacionServicio }}">{{ item.estacionServicio }}</td>
+            
+            <td class="text-center">
+              <button class="btn btn-action-edit me-1" (click)="startEdit(item)" title="Editar">
+                <i class="bi bi-pencil-square"></i>
+              </button>
+              <button class="btn btn-action-delete" (click)="eliminarTanqueo(item._id || item.id)" title="Eliminar">
+                <i class="bi bi-trash3"></i>
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="tanqueosFiltrados.length === 0">
+            <td colspan="11" class="text-center py-5 text-muted">
+              <i class="bi bi-file-earmark-bar-graph fs-2 d-block mb-2 text-secondary"></i>
+              No se encontraron registros de tanqueo asociados a la búsqueda.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

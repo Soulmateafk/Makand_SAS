@@ -1,0 +1,94 @@
+<div class="container-fluid py-2">
+  <div class="row g-3">
+    <!-- Tarjeta: Documentos Críticos (DINÁMICO) -->
+    <div class="col-md-4">
+      <div class="card border-0 shadow-sm border-start border-danger border-4">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h6 class="text-muted mb-1">Documentos Vencidos</h6>
+              <!-- Mostramos el largo del arreglo de alertas críticas -->
+              <h2 class="fw-bold mb-0 text-danger">{{ alertasCriticas.length }}</h2>
+            </div>
+            <div class="bg-danger bg-opacity-10 p-3 rounded">
+              <i class="bi bi-exclamation-octagon text-danger fs-3"></i>
+            </div>
+          </div>
+          <p class="text-muted small mt-2 mb-0">Requieren acción inmediata</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tarjeta: Próximos a vencer (DINÁMICO) -->
+    <div class="col-md-4">
+      <div class="card border-0 shadow-sm border-start border-warning border-4">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h6 class="text-muted mb-1">Por Vencer (15 días)</h6>
+              <!-- Mostramos el largo del arreglo de alertas próximas -->
+              <h2 class="fw-bold mb-0 text-warning">{{ alertasProximas.length }}</h2>
+            </div>
+            <div class="bg-warning bg-opacity-10 p-3 rounded">
+              <i class="bi bi-clock-history text-warning fs-3"></i>
+            </div>
+          </div>
+          <p class="text-muted small mt-2 mb-0">Planificar renovación</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tarjeta: Al día (DINÁMICO) -->
+    <div class="col-md-4">
+      <div class="card border-0 shadow-sm border-start border-success border-4">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h6 class="text-muted mb-1">Documentación al Día</h6>
+              <h2 class="fw-bold mb-0 text-success">{{ flotaAlDia }}</h2>
+            </div>
+            <div class="bg-success bg-opacity-10 p-3 rounded">
+              <i class="bi bi-check-circle text-success fs-3"></i>
+            </div>
+          </div>
+          <p class="text-muted small mt-2 mb-0">Flota operativa</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabla de detalles dinámica -->
+  <div class="card mt-4 border-0 shadow-sm" *ngIf="alertasCriticas.length > 0 || alertasProximas.length > 0">
+    <div class="card-header bg-white border-0 py-3">
+      <h5 class="mb-0 fw-bold" style="color: #481165;">Detalle de Alertas de Mantenimiento</h5>
+    </div>
+    <div class="table-responsive p-3">
+      <table class="table table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>Vehículo / Conductor</th>
+            <th>Documento</th>
+            <th class="text-center">Días Restantes</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Alertas Críticas (Rojo) -->
+          <tr *ngFor="let a of alertasCriticas">
+            <td><strong>{{ a.placa }}</strong> ({{ a.conductor }})</td>
+            <td>{{ a.documento }}</td>
+            <td class="text-center text-danger fw-bold">{{ a.dias }} (Vencido)</td>
+            <td><span class="badge rounded-pill bg-danger">Crítico</span></td>
+          </tr>
+          <!-- Alertas Próximas (Amarillo) -->
+          <tr *ngFor="let a of alertasProximas">
+            <td><strong>{{ a.placa }}</strong> ({{ a.conductor }})</td>
+            <td>{{ a.documento }}</td>
+            <td class="text-center text-warning fw-bold">{{ a.dias }} días</td>
+            <td><span class="badge rounded-pill bg-warning text-dark">Pendiente</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

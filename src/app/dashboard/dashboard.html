@@ -1,0 +1,163 @@
+<div class="container-fluid py-4 bg-light">
+  <div class="row g-3 mb-4">
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm kpi-card">
+        <div class="card-body">
+          <h6 class="text-muted">Entregas Exitosas</h6>
+          <h3 class="fw-bold text-primary">{{ totalEntregas | number }}</h3>
+          <small class="text-success">Total acumulado</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm kpi-card">
+        <div class="card-body">
+          <h6 class="text-muted">Devoluciones</h6>
+          <h3 class="fw-bold text-danger">{{ totalDevoluciones | number }}</h3>
+          <small class="text-muted">Tasa: {{ tasaRechazo }}%</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm kpi-card">
+        <div class="card-body">
+          <h6 class="text-muted">Conductores</h6>
+          <h3 class="fw-bold">{{ totalConductores | number }}</h3>
+          <small class="text-muted">Todo el personal</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm kpi-card text-white" style="background-color: #481165;">
+        <div class="card-body">
+          <h6 class="opacity-75 text-uppercase small fw-bold">Vehículos Registrados</h6>
+          <h3 class="fw-bold">{{ totalVehiculos }}</h3>
+          <small class="opacity-50">unidades contabilizadas</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-md-4">
+      <div class="card border-0 shadow-sm border-start border-danger border-4">
+        <div class="card-body d-flex justify-content-between align-items-center">
+          <div>
+            <h6 class="text-muted mb-1">Mantenimientos Vencidos</h6>
+            <h4 class="fw-bold text-danger mb-0">{{ statsMantenimiento.vencidosFecha }}</h4>
+          </div>
+          <div class="bg-danger bg-opacity-10 p-3 rounded">
+            <span class="text-danger"><i class="bi bi-exclamation-triangle"></i></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card border-0 shadow-sm border-start border-warning border-4">
+        <div class="card-body d-flex justify-content-between align-items-center">
+          <div>
+            <h6 class="text-muted mb-1">Alerta Kilometraje (90%)</h6>
+            <h4 class="fw-bold text-warning mb-0">{{ statsMantenimiento.alertaKilometraje }}</h4>
+          </div>
+          <div class="bg-warning bg-opacity-10 p-3 rounded">
+            <span class="text-warning"><i class="bi bi-speedometer"></i></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card border-0 shadow-sm border-start border-info border-4">
+        <div class="card-body d-flex justify-content-between align-items-center">
+          <div>
+            <h6 class="text-muted mb-1">Vehículos en Taller</h6>
+            <h4 class="fw-bold text-info mb-0">{{ statsMantenimiento.enTaller }}</h4>
+          </div>
+          <div class="bg-info bg-opacity-10 p-3 rounded">
+            <span class="text-info"><i class="bi bi-wrench"></i></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4 mb-4">
+    <div class="col-lg-8">
+      <div class="card border-0 shadow-sm p-3">
+        <h6 class="fw-bold mb-3">Entregas y Devoluciones por Destino</h6>
+        <div style="height: 300px;">
+          <canvas #lineChartCanvas></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <div class="card border-0 shadow-sm p-3">
+        <h6 class="fw-bold mb-3">Estado de la Operación</h6>
+        <div style="height: 300px;">
+          <canvas #doughnutChartCanvas></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row mb-3">
+    <div class="col-12">
+      <div class="card border-0 shadow-sm p-3">
+        <div class="input-group">
+          <span class="input-group-text bg-white border-end-0"><i class="bi bi-clipboard-check text-primary"></i></span>
+          <input type="text" class="form-control border-start-0" 
+                 placeholder="Buscar por placa o destino real..." 
+                 [(ngModel)]="searchTerm" 
+                 (input)="filtrarVehiculos()">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-md-12">
+      <div class="card border-0 shadow-sm p-3">
+        <h6 class="fw-bold mb-3">Gestión Integral</h6>
+        
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>Vehículo</th>
+                <th>Destino</th>
+                <th>Efectividad</th>
+                <th>Entregas</th>
+                <th>Devoluciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let f of vehiculosFiltrados">
+                <td class="fw-bold text-primary">{{ f.placa }}</td>
+                
+                <td>{{ f.destino || f.ciudad || f.origen || 'Sin destino' }}</td>
+                
+<td>
+  <span class="badge px-3 py-2 fw-semibold"
+        [ngClass]="{
+          'badge-efectividad-alta': f.efectividad >= 67,
+          'badge-efectividad-media': f.efectividad >= 33 && f.efectividad < 66,
+          'badge-efectividad-baja': f.efectividad < 33
+        }">
+    {{ f.efectividad }}%
+  </span>
+</td>
+                
+                <td><span class="text-primary fw-bold">{{ f.entregas || 0 }}</span></td>
+                <td><span class="text-danger fw-bold">{{ f.devoluciones || 0 }}</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

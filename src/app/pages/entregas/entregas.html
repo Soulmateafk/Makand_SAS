@@ -1,0 +1,258 @@
+<div class="container-fluid py-4 bg-light">
+  <!-- Tarjetas de métricas -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-6">
+      <div class="card border-0 shadow-sm purple-bg text-white p-3 text-center">
+        <small class="text-uppercase opacity-75 fw-bold">Entregas Globales</small>
+        <h2 class="fw-bold mb-0">{{ totalEntregas | number }}</h2>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card border-0 shadow-sm bg-white p-3 text-center">
+        <small class="text-muted text-uppercase fw-bold">Devoluciones Globales</small>
+        <h2 class="fw-bold mb-0 text-danger">{{ totalDevoluciones | number }}</h2>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gráficas -->
+  <div class="row g-4 mb-4">
+    <div class="col-lg-7">
+      <div class="card p-4 border-0 shadow-sm bg-white h-100">
+        <h6 class="fw-bold text-muted mb-4 text-uppercase">Rendimiento por Cliente</h6>
+        <div style="height: 300px;"><canvas id="barChart"></canvas></div>
+      </div>
+    </div>
+    <div class="col-lg-5">
+      <div class="card p-4 border-0 shadow-sm bg-white h-100">
+        <h6 class="fw-bold text-muted mb-4 text-uppercase">Destinos de Entrega</h6>
+        <div style="height: 300px;"><canvas id="pieChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECCIÓN DE FILTROS (Fuera de la card principal para mejor contraste) -->
+  <div class="card p-3 border-0 shadow-sm bg-white mb-4">
+    <div class="row g-3">
+      <div class="col-12 d-flex justify-content-between align-items-center mb-2">
+        <small class="fw-bold text-purple text-uppercase">
+          <i class="fas fa-calendar-alt me-1"></i> Búsqueda por Rango de Tiempo
+        </small>
+        <button class="btn btn-sm btn-link text-decoration-none text-muted p-0" (click)="limpiarFiltros()">
+          <i class="fas fa-undo-alt me-1"></i> Restablecer vista
+        </button>
+      </div>
+
+      <!-- Fecha Inicial -->
+      <div class="col-md-3">
+        <label class="small text-muted fw-bold">Desde</label>
+        <input type="date" class="form-control form-control-sm" [(ngModel)]="fechaInicio" (change)="buscarPorRango()">
+      </div>
+
+      <!-- Fecha Final -->
+      <div class="col-md-3">
+        <label class="small text-muted fw-bold">Hasta</label>
+        <input type="date" class="form-control form-control-sm" [(ngModel)]="fechaFin" (change)="buscarPorRango()">
+      </div>
+
+      <!-- Filtro por Año -->
+      <div class="col-md-3">
+        <label class="small text-muted fw-bold">Año</label>
+        <select class="form-select form-select-sm" [(ngModel)]="anioSeleccionado" (change)="filtrarPorHistorial()">
+          <option *ngFor="let a of listaAnios" [value]="a">{{ a }}</option>
+        </select>
+      </div>
+
+      <!-- Botón de Acción -->
+      <div class="col-md-3 d-flex align-items-end">
+        <button class="btn btn-purple btn-sm w-100 fw-bold" (click)="buscarPorRango()">
+          <i class="fas fa-filter me-1"></i> Aplicar Rango
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL LOGÍSTICO PRINCIPAL (TABLA Y FORMULARIO) -->
+  <div class="card p-4 border-0 shadow-sm bg-white">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h6 class="fw-bold text-muted mb-0">PANEL LOGÍSTICO DE GESTIÓN</h6>
+      <div class="d-flex gap-2">
+        <div class="input-group input-group-sm" style="width: 250px;">
+          <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
+          <input type="text" class="form-control border-start-0" placeholder="Buscar placa o cliente..." [(ngModel)]="filtroPlaca">
+        </div>
+        <button class="btn btn-success rounded-pill px-3" (click)="exportarTodoExcel()">
+          <i class="fas fa-file-download me-1"></i> Reporte General
+        </button>
+        <button class="btn btn-purple rounded-pill px-4" (click)="mostrarForm = !mostrarForm">
+          {{ mostrarForm ? 'Cerrar Registro' : '+ Agregar Entrega' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Formulario de Registro -->
+    <div *ngIf="mostrarForm" class="mb-4 p-4 border rounded bg-light shadow-sm form-animado">
+      <h6 class="text-purple fw-bold mb-3">{{ editandoId ? 'Editando Registro' : 'Nuevo Registro de Novedades' }}</h6>
+      <div class="row g-3">
+        <div class="col-md-3">
+          <label class="small fw-bold text-muted">Conductor</label>
+          <input type="text" [(ngModel)]="nuevoPunto.conductor" class="form-control" placeholder="Nombre completo">
+        </div>
+        <div class="col-md-2">
+          <label class="small fw-bold text-muted">Placa</label>
+          <input type="text" [(ngModel)]="nuevoPunto.placa" class="form-control" placeholder="ABC-123">
+          <small class="text-danger" *ngIf="errorPlaca">{{errorPlaca}}</small>
+        </div>
+        <div class="col-md-3">
+          <label class="small fw-bold text-muted">Cliente</label>
+          <input type="text" [(ngModel)]="nuevoPunto.nombre" class="form-control">
+        </div>
+        <div class="col-md-2">
+          <label class="small fw-bold text-muted">Destino</label>
+          <input type="text" [(ngModel)]="nuevoPunto.origen" class="form-control">
+        </div>
+        <div class="col-md-2">
+          <label class="small fw-bold text-muted">Estado</label>
+          <select class="form-select" [(ngModel)]="nuevoPunto.estadoProducto">
+            <option value="Óptimo (Sin novedades)">Óptimo</option>
+            <option value="Dañado">Dañado</option>
+            <option value="Faltante">Faltante</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="small fw-bold text-muted">Entregas</label>
+          <input type="number" [(ngModel)]="nuevoPunto.entregas" class="form-control">
+        </div>
+        <div class="col-md-2">
+          <label class="small fw-bold text-muted">Devoluciones</label>
+          <input type="number" [(ngModel)]="nuevoPunto.devoluciones" class="form-control">
+        </div>
+        <div class="col-md-8">
+          <label class="small fw-bold text-muted">Observaciones</label>
+          <textarea [(ngModel)]="nuevoPunto.explicacion" class="form-control" rows="1"></textarea>
+        </div>
+        <div class="col-md-9">
+          <label class="small fw-bold text-muted">Evidencia Fotográfica</label>
+          <div class="border rounded bg-white p-2 d-flex align-items-center justify-content-between" (click)="fileInput.click()" style="cursor: pointer;">
+            <span class="small text-muted" *ngIf="!nuevoPunto.foto"> Toca para adjuntar foto</span>
+            <div class="d-flex align-items-center" *ngIf="nuevoPunto.foto">
+              <img [src]="nuevoPunto.foto" style="height: 30px; width: 30px; object-fit: cover; border-radius: 4px;" class="me-2">
+              <span class="small text-success fw-bold"> Imagen cargada</span>
+            </div>
+            <input type="file" #fileInput hidden (change)="onFileSelected($event)" accept="image/*">
+            <button class="btn btn-sm btn-outline-purple" type="button">Cambiar</button>
+          </div>
+        </div>
+        <div class="col-md-3 d-flex align-items-end">
+          <button class="btn btn-purple w-100 fw-bold" (click)="agregarPunto()">
+            {{ editandoId ? 'ACTUALIZAR' : 'GUARDAR' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabla de Resultados -->
+    <div class="table-responsive">
+      <table class="table align-middle">
+        <thead>
+          <tr class="small text-muted">
+            <th>FECHA</th>
+            <th>VEHÍCULO</th>
+            <th>CLIENTE/DESTINO</th>
+            <th>MÉTRICAS</th>
+            <th>TASA DE ÉXITO</th>
+            <th class="text-center">ACCIONES</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let p of puntosFiltrados">
+            <td>
+              <span class="small fw-bold text-muted d-block">{{ p.fecha | date:'dd/MM/yyyy' }}</span>
+              <small class="text-purple opacity-50">{{ p.fecha | date:'hh:mm a' }}</small>
+            </td>
+            <td><span class="badge bg-light text-purple border">{{ p.placa }}</span></td>
+            <td>
+              <strong class="text-purple">{{p.nombre}}</strong><br>
+              <small class="text-muted">{{p.origen}}</small>
+            </td>
+            <td>
+              <span class="small d-block text-dark"><strong>{{p.entregas}}</strong> Ent.</span>
+              <span class="small d-block text-danger"><strong>{{p.devoluciones}}</strong> Dev.</span>
+            </td>
+            <td>
+              <div class="progress" style="height: 10px; border-radius: 10px; width: 120px;">
+                <div class="progress-bar bg-purple" [style.width]="p.tasa + '%'"></div>
+              </div>
+              <small class="fw-bold text-purple">{{p.tasa}}%</small>
+            </td>
+            <td class="text-center">
+              <div class="d-flex justify-content-center gap-1">
+                <button (click)="abrirDetalle(p)" class="btn btn-sm btn-light border text-purple">
+                  <i class="fas fa-eye"></i> Info
+                </button>
+                <button (click)="exportarIndividualExcel(p)" class="btn btn-sm btn-outline-success">
+                  <i class="fas fa-file-excel"></i> Excel individual
+                </button>
+                <button (click)="editarPunto(p)" class="btn btn-sm text-primary border-0">
+                  <i class="fas fa-edit"></i> editar
+                </button>
+                <button (click)="eliminarPunto(p.id)" class="btn btn-sm text-danger border-0">
+                  <i class="fas fa-trash"></i> eliminar
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de Detalle -->
+<div *ngIf="entregaSeleccionada" class="modal-overlay" (click)="cerrarDetalle()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header purple-bg text-white">
+      <h5 class="mb-0 fw-bold">Detalle de Operación: {{entregaSeleccionada.placa}}</h5>
+      <button class="btn-close btn-close-white" (click)="cerrarDetalle()"></button>
+    </div>
+    <div class="modal-body p-4">
+      <div class="row g-4">
+        <div class="col-md-6">
+          <div class="mb-3">
+            <label class="small text-muted fw-bold d-block">CONDUCTOR</label>
+            <span>{{entregaSeleccionada.conductor || 'No registrado'}}</span>
+          </div>
+          <div class="mb-3">
+            <label class="small text-muted fw-bold d-block">CLIENTE / DESTINO</label>
+            <span>{{entregaSeleccionada.nombre}}</span><br>
+            <span class="text-muted small">{{entregaSeleccionada.origen}}</span>
+          </div>
+          <div class="mb-3">
+            <label class="small text-muted fw-bold d-block">ESTADO DE CARGA</label>
+            <span [class.text-danger]="entregaSeleccionada.estadoProducto !== 'Óptimo (Sin novedades)'" class="fw-bold">
+              {{entregaSeleccionada.estadoProducto}}
+            </span>
+          </div>
+          <div class="p-3 bg-light rounded border">
+            <label class="small text-muted fw-bold d-block mb-1">OBSERVACIONES</label>
+            <p class="mb-0 small">{{entregaSeleccionada.explicacion || 'Sin comentarios adicionales.'}}</p>
+          </div>
+        </div>
+        <div class="col-md-6 text-center d-flex flex-column justify-content-center border-start">
+          <label class="small text-muted fw-bold d-block mb-2">EVIDENCIA FOTOGRÁFICA</label>
+          <img *ngIf="entregaSeleccionada.foto" [src]="entregaSeleccionada.foto" class="img-fluid rounded shadow-sm border" style="max-height: 250px; object-fit: contain;">
+          <div *ngIf="!entregaSeleccionada.foto" class="p-5 bg-light border rounded text-muted">
+            <i class="fas fa-image fa-3x mb-2 opacity-25"></i><br>
+            <span class="small">Sin foto adjunta</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer bg-light border-top d-flex justify-content-between">
+      <button class="btn btn-outline-success btn-sm" (click)="exportarIndividualExcel(entregaSeleccionada)">
+        <i class="fas fa-file-excel"></i> Descargar Ficha Excel
+      </button>
+      <button class="btn btn-purple btn-sm px-4" (click)="cerrarDetalle()">Entendido</button>
+    </div>
+  </div>
+</div>

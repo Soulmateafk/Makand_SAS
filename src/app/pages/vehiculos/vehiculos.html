@@ -1,0 +1,145 @@
+<div class="flota-container">
+  <div class="header-actions">
+    <h2><i class="fas fa-bus"></i> Gestión de Flota de Vehículos</h2>
+    <button class="btn-primary" (click)="mostrarFormulario = !mostrarFormulario">
+      {{ mostrarFormulario ? ' Cerrar Formulario' : ' Agregar Vehículo' }}
+    </button>
+  </div>
+
+  <div class="form-card" *ngIf="mostrarFormulario">
+    <form #vehiculoForm="ngForm">
+      <div class="form-section">
+        <h3>1. Identificación y Marca</h3>
+        <div class="grid-4">
+          <div class="group">
+            <label>Placa</label>
+            <!-- He agregado name="placa" para que coincida con el modelo -->
+            <input type="text" [(ngModel)]="vehiculo.placa" name="placa" placeholder="ABC-123" required #placa="ngModel">
+            <div *ngIf="placa.invalid && placa.touched" class="text-danger small">La placa es obligatoria</div>
+          </div>
+          <div class="group">
+            <label>Marca y Modelo</label>
+            <input type="text" [(ngModel)]="vehiculo.marcaModelo" name="marcaModelo" placeholder="Toyota Hilux">
+          </div>
+          <div class="group">
+            <label>Año</label>
+            <input type="number" [(ngModel)]="vehiculo.anio" name="anio">
+          </div>
+          <div class="group">
+            <label>N° Interno / Flota</label>
+            <input type="text" [(ngModel)]="vehiculo.numFlota" name="numFlota">
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>2. Documentación Legal</h3>
+        <div class="grid-3">
+          <div class="group">
+            <label>Vencimiento SOAT</label>
+            <input type="date" [(ngModel)]="vehiculo.soat" name="soat">
+          </div>
+          <div class="group">
+            <label>Vencimiento Tecno</label>
+            <input type="date" [(ngModel)]="vehiculo.tecno" name="tecno">
+          </div>
+          <div class="group">
+            <label>Seguro Todo Riesgo</label>
+            <input type="date" [(ngModel)]="vehiculo.seguro" name="seguro">
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>3. Estado y Operación</h3>
+        <div class="grid-3">
+          <div class="group">
+            <label>Kilometraje Actual</label>
+            <input type="number" [(ngModel)]="vehiculo.kmActual" name="kmActual">
+          </div>
+          <div class="group">
+            <label>Próximo Mantenimiento (km)</label>
+            <input type="number" [(ngModel)]="vehiculo.kmProximo" name="kmProximo">
+          </div>
+          <div class="group">
+            <label>Estado</label>
+            <select [(ngModel)]="vehiculo.estado" name="estado">
+              <option value="Bueno">Bueno</option>
+              <option value="Regular">Regular</option>
+              <option value="Malo">Malo</option>
+              <option value="En Taller">En Taller</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>4. Responsables</h3>
+        <div class="grid-2">
+          <div class="group">
+            <label>Conductor Asignado</label>
+            <input type="text" [(ngModel)]="vehiculo.conductor" name="conductor">
+          </div>
+          <div class="group">
+            <label>Centro de Costos / Área</label>
+            <input type="text" [(ngModel)]="vehiculo.area" name="area">
+          </div>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <!-- Se asegura que el click llame a guardarVehiculo y el tipo sea button para no recargar página -->
+        <button type="button" class="btn-save" (click)="guardarVehiculo()" [disabled]="vehiculoForm.invalid">
+          {{ isEditing ? 'Actualizar Vehículo' : 'Registrar Vehículo' }}
+        </button>
+        <button type="button" class="btn-cancel" (click)="cancelar()">Cancelar</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="table-card">
+    <div class="table-header">
+      <h3>Inventario de Vehículos ({{ listaVehiculos.length }})</h3>
+      <!-- Enlazado el buscador para que funcione -->
+      <input type="text" placeholder="Buscar placa o conductor..." class="search-input" [(ngModel)]="filtro" (input)="filtrar()">
+    </div>
+    <div class="table-responsive">
+      <table>
+        <thead>
+          <tr>
+            <th>Placa</th>
+            <th>N° Interno</th>
+            <th>Marca/Modelo</th>
+            <th>Conductor</th>
+            <th>KM Actual</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let v of listaVehiculos">
+            <td><strong>{{ v.placa }}</strong></td>
+            <td>{{ v.numFlota || 'N/A' }}</td>
+            <td>{{ v.marcaModelo || 'N/A' }}</td>
+            <td>{{ v.conductor || 'Sin asignar' }}</td>
+            <td>{{ (v.kmActual | number) || '0' }} km</td>
+            <td>
+              <span class="status-pill" [attr.data-status]="v.estado">{{ v.estado }}</span>
+            </td>
+            <td>
+              <div class="d-flex gap-2">
+                <!-- Se cambió editar(i) por editar(v) para pasar el objeto completo y evitar errores de índice al filtrar -->
+                <button class="btn-icon edit" (click)="editar(v)"><i class="fas fa-edit"></i> Editar</button>
+                <button class="btn-icon delete" (click)="eliminar(v._id)"><i class="fas fa-trash"></i> Eliminar</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    
+    <div *ngIf="listaVehiculos.length === 0" class="text-center py-4">
+       <p class="text-muted">No se encontraron vehículos registrados.</p>
+    </div>
+  </div>
+</div>

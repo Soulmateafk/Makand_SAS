@@ -1,0 +1,253 @@
+<div class="mantenimiento-wrapper">
+  
+  <!-- 1. CONTADORES SUPERIORES Y GRÁFICA -->
+  <div class="status-cards">
+    <div class="card purple">
+      <i class="fas fa-tools"></i>
+      <div class="info">
+        <span>Vehículos en Mantenimiento</span>
+        <h3>{{ totalEnTaller }}</h3>
+      </div>
+    </div>
+    
+    <div class="card green chart-card">
+      <i class="fas fa-chart-pie"></i>
+      <div class="info" style="width: 100%;">
+        <span>Estado de la Flota</span>
+        <div class="chart-wrapper">
+           <canvas id="estadoChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. FORMULARIO DE REGISTRO -->
+  <div class="form-container">
+    <div class="form-header">
+      <h2><i class="fas fa-wrench"></i> {{ isEditing ? 'Editando Registro' : 'Ficha Técnica de Mantenimiento' }}</h2>
+      <button class="btn-cancel" (click)="resetForm()" *ngIf="isEditing">
+        <i class="fas fa-times"></i> Cancelar / Nuevo
+      </button>
+    </div>
+
+    <form class="main-form">
+      <fieldset>
+        <legend>Información General del Vehículo</legend>
+        <div class="grid-4">
+          <div class="group">
+            <label>Placa</label>
+            <input type="text" [(ngModel)]="registro.placa" name="placa" placeholder="Ej: ABC123" [class.invalid]="!esValido('placa')" style="text-transform: uppercase;">
+          </div>
+          <div class="group">
+            <label>Marca / Modelo</label>
+            <input type="text" [(ngModel)]="registro.marcaModelo" name="marcaModelo">
+          </div>
+          <div class="group">
+            <label>Motor / Chasis</label>
+            <input type="text" [(ngModel)]="registro.numMotor" name="numMotor">
+          </div>
+          <div class="group">
+            <label>Nombre del Conductor</label>
+            <input type="text" [(ngModel)]="registro.conductor" name="conductor" [class.invalid]="!esValido('conductor')">
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Datos del Servicio y Kilometraje</legend>
+        <div class="grid-3">
+          <div class="group">
+            <label>Kilometraje Actual</label>
+            <input type="number" [(ngModel)]="registro.kilometraje" name="kilometraje">
+          </div>
+          <!-- UNICO CAMBIO: Se agrega este campo para que funcione la alerta del dashboard -->
+          <div class="group">
+            <label>Kilometraje Próximo Mantenimiento</label>
+            <input type="number" [(ngModel)]="registro.kilometrajeProximo" name="kilometrajeProximo" placeholder="Para alertas">
+          </div>
+          <div class="group">
+            <label>Tipo de Intervención</label>
+            <select [(ngModel)]="registro.tipoIntervencion" name="tipo">
+              <option value="Preventivo">Preventivo</option>
+              <option value="Correctivo">Correctivo</option>
+              <option value="Predictivo">Predictivo</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid-3" style="margin-top: 15px;">
+          <div class="group">
+            <label>Fecha de Entrada</label>
+            <input type="date" [(ngModel)]="registro.fechaEntrada" name="fechaEntrada">
+          </div>
+          <div class="group">
+            <label>Fecha Próxima Mantenimiento</label>
+            <input type="date" [(ngModel)]="registro.fechaProxima" name="fechaProxima">
+          </div>
+          <div class="group">
+            <label>Vencimiento SOAT</label>
+            <input type="date" [(ngModel)]="registro.vencimientoSoat" name="vencimientoSoat">
+          </div>
+        </div>
+        <div class="grid-3" style="margin-top: 15px;">
+           <div class="group">
+            <label>Vencimiento Tecno</label>
+            <input type="date" [(ngModel)]="registro.vencimientoTecno" name="vencimientoTecno">
+          </div>
+          <div class="group">
+            <label>Estado Actual</label>
+            <select [(ngModel)]="registro.estadoVehiculo" name="estadoVehiculo">
+              <option value="En Taller">En Taller</option>
+              <option value="Operativo">Operativo</option>
+              <option value="Finalizado">Finalizado</option>
+            </select>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Detalles de Taller y Observaciones</legend>
+        <div class="grid-2">
+          <div class="group">
+            <label>Taller / Lugar de Servicio</label>
+            <input type="text" [(ngModel)]="registro.taller" name="taller">
+          </div>
+        </div>
+        <div class="grid-2" style="margin-top: 15px;">
+          <div class="group">
+            <label>Descripción del Trabajo</label>
+            <textarea [(ngModel)]="registro.descripcion" name="descripcion" rows="2"></textarea>
+          </div>
+          <div class="group">
+            <label>Repuestos Utilizados</label>
+            <textarea [(ngModel)]="registro.repuestos" name="repuestos" rows="2"></textarea>
+          </div>
+        </div>
+      </fieldset>
+
+      <div class="grid-2">
+        <fieldset>
+          <legend>Costos</legend>
+          <div class="group">
+            <label>Costo Mano de Obra</label>
+            <input type="number" [(ngModel)]="registro.costoManoObra" name="costoManoObra">
+          </div>
+          <div class="group" style="margin-top: 10px;">
+            <label>Costo Total Repuestos/Otros</label>
+            <input type="number" [(ngModel)]="registro.costoTotal" name="costoTotal">
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Checklist de Revisión</legend>
+          <div class="grid-checkbox">
+            <label><input type="checkbox" [(ngModel)]="registro.checklist.frenos" name="frenos"> Frenos</label>
+            <label><input type="checkbox" [(ngModel)]="registro.checklist.aceite" name="aceite"> Aceite</label>
+            <label><input type="checkbox" [(ngModel)]="registro.checklist.neumaticos" name="neumaticos"> Neumáticos</label>
+            <label><input type="checkbox" [(ngModel)]="registro.checklist.bateria" name="bateria"> Batería</label>
+            <label><input type="checkbox" [(ngModel)]="registro.checklist.luces" name="luces"> Luces</label>
+            <label><input type="checkbox" [(ngModel)]="registro.checklist.refrigerante" name="refrigerante"> Refri.</label>
+          </div>
+        </fieldset>
+      </div>
+
+      <fieldset>
+        <legend>Evidencias y Documentos (Fotos)</legend>
+        <div class="upload-section">
+          <input type="file" class="input-personalizado" (change)="onFilesSelected($event)" multiple accept="image/*">
+          <div class="preview-scroll" *ngIf="registro.fotos && registro.fotos.length > 0">
+            <img *ngFor="let img of registro.fotos" [src]="img" class="thumb">
+          </div>
+        </div>
+      </fieldset>
+
+      <div class="form-actions">
+        <button type="button" class="btn-save" (click)="guardarMantenimiento()">
+          <i class="fas fa-save"></i> {{ isEditing ? 'Actualizar Registro' : 'Guardar Mantenimiento' }}
+        </button>
+        <button type="button" class="btn-excel" (click)="exportarExcel()">
+          <i class="fas fa-file-excel"></i> Exportar Histórico
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- 3. SECCIÓN DE HISTORIAL -->
+  <div class="fichas-generadas-container">
+    <div class="form-header">
+      <h3 class="section-title"><i class="fas fa-folder-open"></i> Historial de Mantenimientos</h3>
+    </div>
+    <div class="fichas-grid">
+      <div class="archivo-card" *ngFor="let item of historico">
+        <div class="archivo-header">
+          <i class="fas fa-file-invoice file-icon"></i>
+          <div class="archivo-meta">
+            <span class="placa-tag">{{ item.placa }} - </span>
+            <span class="fecha-tag">{{ item.fechaEntrada | date:'dd/MM/yyyy' }} </span>
+          </div>
+          <span [class]="'badge-mini ' + (item.estadoVehiculo === 'En Taller' ? 'warn' : 'success')">
+            {{ item.estadoVehiculo }}
+          </span>
+        </div>
+        <div class="archivo-body">
+          <p><strong>Conductor:</strong> {{ item.conductor }}</p>
+          <p><strong>Tipo:</strong> {{ item.tipoIntervencion }}</p>
+          <p><strong>Costo Total:</strong> ${{ (item.costoTotal + item.costoManoObra) | number }}</p>
+        </div>
+        <div class="archivo-footer">
+          <button class="btn-info" (click)="verDetalle(item)">
+            <i class="fas fa-info-circle"></i> Info
+          </button>
+          <button class="btn-view" (click)="cargarParaEditar(item)">
+            <i class="fas fa-edit"></i> Editar
+          </button>
+          <button class="btn-delete-icon" (click)="eliminar(item._id)">
+            <i class="fas fa-trash"></i> eliminar
+          </button>
+        </div>
+      </div>
+    </div>
+    <div *ngIf="historico.length === 0" class="no-data">
+        <p>No hay mantenimientos registrados aún.</p>
+    </div>
+  </div>
+</div>
+
+<!-- 4. MODAL DE DESGLOSE -->
+<div class="modal-overlay" *ngIf="itemSeleccionado" (click)="cerrarModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3><i class="fas fa-clipboard-list"></i> Detalle: {{ itemSeleccionado.placa }}</h3>
+      <button class="close-btn" (click)="cerrarModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="detail-grid">
+        <div class="detail-section">
+          <h4>Datos del Vehículo</h4>
+          <p><strong>Conductor:</strong> {{ itemSeleccionado.conductor }}</p>
+          <p><strong>Marca/Modelo:</strong> {{ itemSeleccionado.marcaModelo }}</p>
+          <p><strong>Motor:</strong> {{ itemSeleccionado.numMotor }}</p>
+          <p><strong>Kilometraje:</strong> {{ itemSeleccionado.kilometraje | number }} km</p>
+        </div>
+        <div class="detail-section">
+          <h4>Documentación</h4>
+          <p><strong>SOAT:</strong> {{ itemSeleccionado.vencimientoSoat | date:'dd/MM/yyyy' }}</p>
+          <p><strong>Tecno:</strong> {{ itemSeleccionado.vencimientoTecno | date:'dd/MM/yyyy' }}</p>
+          <p><strong>Próxima Cita:</strong> {{ itemSeleccionado.fechaProxima | date:'dd/MM/yyyy' }}</p>
+          <p><strong>Taller:</strong> {{ itemSeleccionado.taller }}</p>
+        </div>
+      </div>
+      <hr>
+      <div class="detail-full">
+        <h4>Trabajo Realizado</h4>
+        <p><strong>Descripción:</strong> {{ itemSeleccionado.descripcion || 'Sin descripción' }}</p>
+        <p><strong>Repuestos:</strong> {{ itemSeleccionado.repuestos || 'N/A' }}</p>
+      </div>
+      <div class="detail-photos" *ngIf="itemSeleccionado.fotos?.length > 0">
+        <h4>Evidencias</h4>
+        <div class="photo-scroll">
+          <img *ngFor="let foto of itemSeleccionado.fotos" [src]="foto" class="modal-img">
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,148 @@
+.login-page {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Gradiente ajustado a los colores de tu app */
+  background: linear-gradient(135deg, #481165 0%, #2a0a3b 100%);
+  font-family: 'Segoe UI', Roboto, sans-serif;
+}
+
+.login-card {
+  background: white;
+  padding: 40px;
+  border-radius: 16px; /* Bordes redondos como pediste */
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
+}
+
+.brand-section {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.logo-placeholder {
+  width: 50px;
+  height: 50px;
+  background: #6b0f9c; /* Morado principal */
+  color: white;
+  font-size: 24px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px; /* Bordes redondos */
+  margin: 0 auto 15px;
+}
+
+h1 { font-size: 1.5rem; color: #481165; margin: 0; }
+p { color: #64748b; font-size: 0.9rem; }
+
+.input-group { margin-bottom: 20px; text-align: left; } /* Alineación corregida */
+label { display: block; margin-bottom: 8px; font-size: 0.85rem; font-weight: 600; color: #481165; }
+
+input[type="email"], input[type="password"] {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px; /* Bordes redondos */
+  box-sizing: border-box;
+  background-color: #f0f4ff; /* Tono azulado suave de los inputs en la imagen */
+  transition: all 0.3s; /* Bajamos el tiempo para que se sienta más fluido */
+}
+
+/* Foco del input en morado */
+input:focus {
+  outline: none;
+  border-color: #6b0f9c;
+  box-shadow: 0 0 0 3px rgba(107, 15, 156, 0.1);
+}
+
+/* Clase de error para validaciones de Angular */
+input.error { 
+  border-color: #ef4444 !important; 
+  background-color: #fef2f2 !important; 
+}
+
+/* Texto pequeño de error debajo de los inputs */
+.error-text {
+  color: #ef4444;
+  font-size: 0.75rem;
+  margin-top: 5px;
+  display: block;
+}
+
+.form-options {
+  display: flex;
+  justify-content: flex-start; /* Alineado a la izquierda para el checkbox */
+  align-items: center;
+  font-size: 0.8rem;
+  margin-bottom: 25px;
+  gap: 8px;
+}
+
+.checkbox-container {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: #481165;
+}
+
+.btn-login {
+  width: 100%;
+  padding: 14px;
+  background: #481165; /* Morado oscuro de la app */
+  color: white;
+  border: none;
+  border-radius: 10px; /* Bordes redondos */
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-login:hover:not(:disabled) { 
+  background: #6b0f9c; 
+  transform: translateY(-1px);
+}
+
+.btn-login:disabled { 
+  background: #94a3b8; 
+  cursor: not-allowed; 
+}
+
+.alert-error {
+  background: #fee2e2;
+  color: #b91c1c;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  margin-bottom: 20px;
+  text-align: center;
+  border: 1px solid #fecaca;
+}
+
+/* Animación del Loader para el botón */
+.loader {
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+footer {
+  margin-top: 30px;
+  text-align: center;
+  font-size: 0.75rem;
+  color: #ffffff; 
+  opacity: 0.8;
+}

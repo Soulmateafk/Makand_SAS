@@ -1,0 +1,221 @@
+/* --- Fondo y Contenedor General --- */
+.bg-light { 
+    background-color: #f8f9fa !important; 
+}
+
+/* --- Tarjetas (Cards) Generales --- */
+.card { 
+    border-radius: 16px; /* Bordes redondos consistentes */
+    border: none; 
+    transition: all 0.3s ease;
+}
+
+/* --- KPIs (Indicadores Clave) --- */
+.kpi-card { 
+    border-radius: 15px; 
+    border: none;
+    overflow: hidden;
+}
+
+.kpi-card:hover { 
+    transform: translateY(-5px); 
+    box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+}
+
+/* El KPI Morado Principal */
+.kpi-purple {
+    background-color: #481165 !important; 
+    color: #ffffff !important;
+}
+
+.kpi-purple .text-muted, 
+.kpi-purple small {
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.kpi-purple h3 { 
+    color: #ffffff !important; 
+}
+
+/* --- Gráficas --- */
+.chart-container {
+    position: relative;
+    height: 300px;
+    width: 100%;
+}
+
+/* --- Tabla y Gestión --- */
+.table {
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.table thead.table-light {
+    background-color: #f8f9fa;
+}
+
+.table thead th {
+    color: #481165;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    border-bottom: 2px solid #eee;
+}
+
+/* Color del texto principal (Placas) */
+.text-primary {
+    color: #481165 !important;
+}
+
+/* Hover de la fila: Morado suave */
+.table-hover tbody tr:hover {
+    background-color: #f3e8ff !important; 
+    transition: 0.2s;
+}
+
+/* --- Botones de Acción --- */
+.btn-success {
+    background-color: #481165;
+    border-color: #481165;
+    border-radius: 8px;
+    font-weight: 600;
+}
+
+.btn-success:hover {
+    background-color: #6b0f9c;
+    border-color: #6b0f9c;
+    transform: scale(1.02);
+}
+
+.btn-outline-secondary {
+    border-radius: 8px;
+    color: #6b0f9c;
+    border-color: #6b0f9c;
+}
+
+.btn-outline-secondary:hover {
+    background-color: #6b0f9c;
+    color: white;
+}
+
+/* --- Buscador (Input Group) --- */
+.input-group {
+    box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+    border-radius: 12px;
+}
+
+.input-group-text {
+    border-radius: 12px 0 0 12px !important;
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-right: none;
+    color: #6b0f9c;
+}
+
+.input-group .form-control {
+    border-radius: 0 12px 12px 0 !important;
+    height: 48px;
+    border: 1px solid #e2e8f0;
+    border-left: none;
+}
+
+.input-group .form-control:focus {
+    border-color: #6b0f9c;
+    box-shadow: none;
+}
+
+/* --- Ajustes de Edición en Tabla --- */
+.form-control-sm {
+    border-radius: 6px;
+    border: 1px solid #d1d5db;
+}
+
+.form-control-sm:focus {
+    border-color: #481165;
+    box-shadow: 0 0 0 2px rgba(72, 17, 101, 0.1);
+}
+
+/* Badge de Fallas (Rojo corporativo) */
+.badge.bg-danger {
+    background-color: #d11818 !important;
+    border-radius: 6px;
+    padding: 5px 8px;
+    transition: 1.5s;
+}
+.badge.bg-danger:hover {
+    background-color: #130606 !important;
+}
+
+/* =========================================
+   AGREGADOS PARA CORREGIR BOTONES VACÍOS
+   ========================================= */
+
+.btn-sm {
+    padding: 0.4rem 0.6rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 35px;
+    height: 35px;
+}
+
+.btn-sm i {
+    font-size: 1rem;
+    display: block;
+}
+
+/* Ajuste para que los botones de edición (Ok/X) no se deformen */
+.d-flex.gap-1 .btn-sm {
+    height: auto;
+    padding: 8px;
+    min-width: 45px;
+}
+.btn.btn-sm.btn-outline-secondary {
+    padding: 0.4rem 0.6rem;
+    display: inline-flex;
+    align-items: center;
+    min-width: 35px;
+    height: 35px;
+    color: #ffffff;
+    background-color: #136413 !important;
+    transition: all 0.8s ease;
+    border: transparent !important;
+}
+.btn.btn-sm.btn-outline-secondary:hover {
+    background-color: #0af10a !important;
+    color: white;
+    padding: 14px;
+}
+.btn.btn-sm.btn-outline-danger {
+    padding: 0.4rem 0.6rem;
+    display: inline-flex;
+    align-items: center;
+    min-width: 35px;
+    height: 35px;
+    color: #ffffff;
+    background-color: #7a1b1b !important;
+    transition: all 0.8s ease;
+    border: transparent !important;
+}
+.btn.btn-sm.btn-outline-danger:hover {
+    background-color: #ff0000 !important;
+    color: white;
+    padding: 14px;
+}
+/* Estado Excelente (Verde) */
+.badge-efectividad-alta {
+  background-color: #1d6f42 !important; /* Tu verde personalizado */
+  color: #ffffff !important;
+}
+
+/* Estado Regular (Amarillo) */
+.badge-efectividad-media {
+  background-color: #ffc107 !important; /* Tu amarillo personalizado */
+  color: #212529 !important;
+}
+
+/* Estado Crítico (Rojo) */
+.badge-efectividad-baja {
+  background-color: #dc3545 !important; /* Tu rojo personalizado */
+  color: #ffffff !important;
+}

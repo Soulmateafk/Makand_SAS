@@ -1,0 +1,67 @@
+<div class="login-page">
+  <div class="login-card">
+    <div class="brand-section">
+      <div class="logo-placeholder">L</div>
+      <h1>Logística S.A.</h1>
+      <p>Acceso al Panel Administrativo</p>
+    </div>
+
+    <!-- El formulario se vincula con [formGroup] de tu login.ts -->
+    <form [formGroup]="loginForm" (ngSubmit)="onLogin()">
+      
+      <!-- Campo Email -->
+      <div class="input-group">
+        <label>Correo Corporativo</label>
+        <input 
+          type="email" 
+          formControlName="email" 
+          placeholder="usuario@empresa.com"
+          [class.error]="loginForm.get('email')?.touched && loginForm.get('email')?.invalid">
+        
+        <!-- Verificación de formato de email -->
+        <small class="error-text" *ngIf="loginForm.get('email')?.touched && loginForm.get('email')?.errors?.['email']">
+          Ingrese un correo válido.
+        </small>
+        <small class="error-text" *ngIf="loginForm.get('email')?.touched && loginForm.get('email')?.errors?.['required']">
+          El correo es obligatorio.
+        </small>
+      </div>
+
+      <!-- Campo Password -->
+      <div class="input-group">
+        <label>Contraseña</label>
+        <input 
+          type="password" 
+          formControlName="password" 
+          placeholder="••••••••"
+          [class.error]="loginForm.get('password')?.touched && loginForm.get('password')?.invalid">
+        
+        <!-- Verificación de longitud mínima -->
+        <small class="error-text" *ngIf="loginForm.get('password')?.touched && loginForm.get('password')?.errors?.['minlength']">
+          La contraseña debe tener al menos 6 caracteres.
+        </small>
+      </div>
+
+      <div class="form-options">
+        <label class="checkbox-container">
+          <input type="checkbox" formControlName="rememberMe"> Recordarme
+        </label>
+      </div>
+
+      <!-- Mensaje que viene desde MongoDB (errorMessage en login.ts) -->
+      <div *ngIf="errorMessage" class="alert-error">
+        {{ errorMessage }}
+      </div>
+
+      <button type="submit" [disabled]="isLoading" class="btn-login">
+        <span *ngIf="!isLoading">Iniciar Sesión</span>
+        <!-- El loader se activa cuando isLoading = true -->
+        <span *ngIf="isLoading" class="loader"></span>
+      </button>
+    </form>
+
+    <footer>
+      © 2026 Makand SAS Todos los derechos reservados.
+    </footer>
+  </div>
+</div>

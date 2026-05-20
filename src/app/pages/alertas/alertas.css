@@ -1,0 +1,89 @@
+/* Contenedor principal con suave degradado de fondo */
+.container-fluid {
+    background-color: #f8f9fa;
+    min-height: 100vh;
+}
+
+/* Tarjetas de Resumen */
+.card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border-radius: 12px;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+}
+
+/* Colores de los bordes laterales (Semáforo) */
+.border-danger { border-left: 6px solid #dc3545 !important; }
+.border-warning { border-left: 6px solid #ffc107 !important; }
+.border-success { border-left: 6px solid #198754 !important; }
+
+/* Tipografía y números */
+h2 {
+    font-size: 2.2rem;
+    letter-spacing: -1px;
+}
+
+.text-muted {
+    font-weight: 500;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+}
+
+/* Estilos de la Tabla */
+.table-responsive {
+    border-radius: 12px;
+}
+
+.table thead th {
+    background-color: #f1f4f8;
+    color: #495057;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    border: none;
+    padding: 15px;
+}
+
+.table tbody td {
+    padding: 15px;
+    vertical-align: middle;
+    border-bottom: 1px solid #f1f1f1;
+}
+
+/* Badges (Píldoras de estado) */
+.badge {
+    padding: 8px 12px;
+    font-weight: 600;
+    font-size: 0.7rem;
+}
+
+/* Iconos dentro de las tarjetas */
+.bg-opacity-10 {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Botón de acción */
+.btn-outline-primary {
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.btn-outline-primary:hover {
+    background-color: #2665c4;
+    border-color: #2665c4;
+    color: white;
+}
+
+/* Sombra personalizada similar a la que corregimos antes */
+.shadow-sm {
+    box-shadow: 0 4px 15px rgba(38, 101, 196, 0.1) !important;
+}

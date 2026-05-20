@@ -1,0 +1,6 @@
+/* mapa-entregas.css */
+.map-container {
+  width: 100%;
+  height: 500px; /* ¡IMPORTANTE! Si no pones altura, el mapa es invisible */
+  border: 1px solid #ccc;
+}

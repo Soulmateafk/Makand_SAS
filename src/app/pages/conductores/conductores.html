@@ -1,0 +1,100 @@
+<div class="formulario-container">
+  <div class="form-card">
+    <div class="form-header">
+      <h2><i class="fas fa-id-card"></i> Registro de Conductores</h2>
+      <!-- Se mantiene la lógica de resetForm() para limpiar campos -->
+      <button class="btn-new" (click)="resetForm()" *ngIf="isEditing">Nuevo Registro</button>
+    </div>
+
+    <form class="novedad-form">
+      <div class="form-grid">
+        <!-- Campo: Nombre -->
+        <div class="group">
+          <label>Nombre Completo</label>
+          <input type="text" [(ngModel)]="registro.nombre" name="nombre" 
+                 [class.invalid-field]="!esValido('nombre')" placeholder="Ej: Carlos Ruiz">
+        </div>
+
+        <!-- Campo: Cédula -->
+        <div class="group">
+          <label>Cédula / ID</label>
+          <input type="text" [(ngModel)]="registro.cedula" name="cedula" 
+                 [class.invalid-field]="!esValido('cedula')" placeholder="Número de identificación">
+        </div>
+
+        <!-- Campo: Fecha Nacimiento -->
+        <div class="group">
+          <label>Fecha Nacimiento</label>
+          <input type="date" [(ngModel)]="registro.fechaNacimiento" name="fechaNacimiento" 
+                 [class.invalid-field]="!esValido('fechaNacimiento')">
+        </div>
+
+        <!-- Campo: Teléfono -->
+        <div class="group">
+          <label>Teléfono</label>
+          <input type="text" [(ngModel)]="registro.telefono" name="telefono" 
+                 [class.invalid-field]="!esValido('telefono')" placeholder="Ej: 3105556677">
+        </div>
+
+        <!-- Campo: Fecha de Ingreso (Alineado con fechaUnion) -->
+        <div class="group">
+          <label>Fecha de Ingreso</label>
+          <input type="date" [(ngModel)]="registro.fechaUnion" name="fechaUnion" 
+                 [class.invalid-field]="!esValido('fechaUnion')">
+        </div>
+
+        <!-- Campo: Correo (Alineado con email) -->
+        <div class="group">
+          <label>Correo Institucional</label>
+          <input type="email" [(ngModel)]="registro.email" name="email" 
+                 [class.invalid-field]="!esValido('email')" placeholder="usuario@empresa.com">
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <!-- El botón llama a guardarConductor() que maneja POST y PUT -->
+        <button type="button" class="btn-save" (click)="guardarConductor()">
+          <i class="fas fa-save"></i> {{ isEditing ? 'Actualizar Conductor' : 'Guardar Conductor' }}
+        </button>
+      </div>
+    </form>
+
+    <!-- Tabla: Se eliminó el "i" innecesario y se usan las variables exactas del modelo -->
+    <div class="table-container" *ngIf="conductores.length > 0">
+      <h3><i class="fas fa-clipboard-list"></i> Listado Detallado</h3>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>ID / Cédula</th>
+              <th>F. Nacimiento</th>
+              <th>Teléfono</th>
+              <th>F. Unión</th>
+              <th>Correo</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let c of conductores">
+              <td class="font-bold">{{ c.nombre }}</td>
+              <td>{{ c.cedula }}</td>
+              <td>{{ c.fechaNacimiento }}</td>
+              <td>{{ c.telefono }}</td>
+              <td>{{ c.fechaUnion }}</td>
+              <td>{{ c.email }}</td>
+              <td>
+                <div class="action-cells">
+                  <button class="btn-icon-edit" (click)="cargarParaEditar(c)">
+                    <i class="fas fa-edit"></i> editar
+                  </button>
+                  <button (click)="eliminarConductor(c._id)" class="btn-eliminar">Eliminar</button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

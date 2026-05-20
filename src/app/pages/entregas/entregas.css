@@ -1,0 +1,146 @@
+/* --- TUS ESTILOS ORIGINALES (Mantenidos) --- */
+.purple-bg { 
+    background-color: #481165 !important; 
+}
+
+.text-purple { 
+    color: #481165 !important; 
+}
+
+.btn-purple { 
+    background-color: #6a1996; 
+    color: white; 
+    border: none; 
+    font-weight: bold; 
+    transition: all 0.8s ease; 
+}
+
+.btn-purple:hover { 
+    background-color: #350c4a; 
+    color: white; 
+}
+
+.uppercase { 
+    text-transform: uppercase; 
+    letter-spacing: 0.5px; 
+    font-weight: bold;
+}
+
+canvas {
+    display: block;
+    max-width: 100%;
+}
+
+.progress-bar {
+    background-color: #7423a0;
+    transition: width 1s ease-in-out;
+    
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #481165;
+    box-shadow: 0 0 0 0.25rem rgba(72, 17, 101, 0.25);
+}
+
+/* --- ESTILOS DE BOTONES CON TRANSICIÓN LENTA Y BACKGROUND BASE --- */
+
+/* 1. BOTÓN INFO (Pasa a Morado) */
+.btn.btn-sm.btn-light.text-purple {
+    background-color: #62158f !important; /* Fondo gris muy claro inicial */
+    color: #ffffff !important;
+    border: 1px solid #ddd !important;
+    transition: all 0.8s ease; /* Transmisión más lenta */
+    font-weight: bold;
+}
+
+.btn.btn-sm.btn-light.text-purple:hover {
+    background-color: #b700ff !important;
+    color: white !important;
+    
+}
+
+/* 2. BOTÓN DESCARGAR (Pasa a Verde) */
+.btn.btn-sm.btn-outline-success {
+    background-color: #12e40a !important; /* Fondo verde casi invisible inicial */
+    color: #ffffff !important;
+    border: 1px solid transparent !important;
+    font-weight: bold;
+    transition: all 0.8s ease;
+}
+
+.btn.btn-sm.btn-outline-success:hover {
+    background-color: #00ff55 !important;
+    color: white !important;
+}
+
+/* 3. BOTÓN EDITAR (Pasa a Amarillo) */
+.btn.btn-sm.text-primary {
+    background-color: #ffe600 !important; /* Fondo amarillo muy tenue inicial */
+    color: #ffffff !important;
+    border: 1px solid transparent !important;
+    transition: all 0.8s ease;
+    font-weight: bold;
+}
+
+.btn.btn-sm.text-primary:hover {
+    background-color: #ff5e00 !important;
+    color: #ffffff !important;
+    border-radius: 8px;
+}
+
+/* 4. BOTÓN ELIMINAR (Pasa a Rojo) */
+.btn.btn-sm.text-danger.border-0 {
+    background-color: #e00f0f !important; /* Fondo rojizo muy suave inicial */
+    color: #ffffff !important;
+    transition: all 0.8s ease;
+    border: 1px solid transparent !important;
+    font-weight: bold;
+}
+
+.btn.btn-sm.text-danger.border-0:hover {
+    background-color: #ff006a !important;
+    color: white !important;
+    border-radius: 8px;
+}
+
+/* --- ESTILOS DE ESTRUCTURA Y MODAL (Mantenidos) --- */
+
+.upload-zone {
+    border: 2px dashed #c8b6ff;
+    background-color: #ffffff;
+    transition: all 0.8s ease;
+    border-radius: 8px;
+}
+
+textarea.form-control {
+    resize: none;
+    border-radius: 8px;
+}
+
+.form-animado {
+    animation: fadeIn 1s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex; justify-content: center; align-items: center;
+    z-index: 1050;
+    animation: fadeIn 0.8s ease;
+}
+
+.modal-content {
+    background: white;
+    width: 90%; max-width: 800px;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+}
+
