@@ -6,7 +6,7 @@ const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const app = express();
 
-// Definimos el puerto aquí para que esté disponible en todo el archivo
+// --- CORRECCIÓN: Definimos el puerto aquí ---
 const PORT = process.env.PORT || 3000;
 
 // 🛡️ IMPORTAR EL VIGILANTE DE SEGURIDAD (MIDDLEWARE)
@@ -28,13 +28,12 @@ app.get('/', (req, res) => res.send('API de Logística funcionando correctamente
 
 const mongoURI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/logistica'; 
 
-// --- MODIFICACIÓN: LA CONEXIÓN Y EL LISTEN AHORA VAN JUNTOS ---
-// Hemos eliminado el app.listen inicial para evitar conflictos y asegurar que la BD conecte primero
+// --- CONEXIÓN Y EL LISTEN ---
 mongoose.connect(mongoURI)
   .then(() => {
     console.log("📍 Conectado a:", process.env.MONGO_URI ? "ATLAS (Nube)" : "LOCAL (Tu PC)");
     
-    // El servidor solo arranca una vez confirmada la conexión y usando la variable correcta PORT
+    // El servidor arranca usando la variable PORT definida al inicio
     app.listen(PORT, () => { 
         console.log(`🚀 Servidor listo en http://localhost:${PORT}`); 
     });
@@ -42,7 +41,6 @@ mongoose.connect(mongoURI)
   .catch(err => {
     console.error("❌ ERROR CRÍTICO AL CONECTAR A LA BD:", err);
   });
-// -----------------------------------------------------------
 
 const Formulario = require('./models/entrega'); 
 const Vehiculo = require('./models/Vehiculo');
@@ -52,7 +50,7 @@ const Usuario = require('./models/Usuario');
 const { Combustible } = require('./models/combustible'); 
 
 // ==========================================
-// RUTA: LOGIN (CORREGIDA Y SEGURA)
+// RUTA: LOGIN
 // ==========================================
 app.post('/api/login', async (req, res) => {
   const { email, password } = req.body;
