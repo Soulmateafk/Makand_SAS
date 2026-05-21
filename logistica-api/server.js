@@ -21,7 +21,8 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // --- PUERTA SECRETA TEMPORAL PARA CREAR ADMIN ---
-app.post('/api/crear-admin-temporal', async (req, res) => {
+// AHORA ES app.get PARA QUE EL NAVEGADOR PUEDA ENTRAR
+app.get('/api/crear-admin-temporal', async (req, res) => {
     // CAMBIA 'UNA_CLAVE_SUPER_SECRETA' POR ALGO TUYO Y ÚNICO
     if (req.query.key !== 'UNA_CLAVE_SUPER_SECRETA') {
         return res.status(403).json({ message: 'Acceso denegado' });
