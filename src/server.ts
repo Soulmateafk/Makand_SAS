@@ -14,10 +14,12 @@ const browserDistFolder = resolve(serverDistFolder, '../browser');
 
 const app = express();
 
-// --- ESTA ES LA FORMA CORRECTA PARA RENDER ---
+// --- CONFIGURACIÓN PARA RENDER ---
 app.set('trust proxy', 1);
 
-const angularApp = new AngularNodeAppEngine();
+// CONFIGURACIÓN CORRECTA DENTRO DE LOS PARÉNTESIS
+const angularApp = new AngularNodeAppEngine({
+});
 
 /**
  * Servir archivos estáticos del navegador

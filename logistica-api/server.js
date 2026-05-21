@@ -1,21 +1,18 @@
-require('dotenv').config(); // Cargar variables de entorno
+require('dotenv').config(); 
 const express = require('express');
 const cors = require('cors');
-const helmet = require('helmet'); // Seguridad adicional
+const helmet = require('helmet'); 
 const mongoose = require('mongoose'); 
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs'); // <--- AÑADIDO: Necesario para cifrar
 const app = express();
 
-// --- CORRECCIÓN: Definimos el puerto aquí ---
 const PORT = process.env.PORT || 3000;
-
-// 🛡️ IMPORTAR EL VIGILANTE DE SEGURIDAD (MIDDLEWARE)
 const verificarAuth = require('./middlewares/auth');
 
-// 🛠️ CONFIGURACIÓN DE SEGURIDAD Y CORS
 app.use(helmet()); 
 app.use(cors({
-  origin: '*', // Permitido acceso general para evitar bloqueos
+  origin: '*', 
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
@@ -23,17 +20,38 @@ app.use(cors({
 app.use(express.json({ limit: '50mb' })); 
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-// RUTA DE SALUD DEL SERVIDOR
+// --- PUERTA SECRETA TEMPORAL PARA CREAR ADMIN ---
+app.post('/api/crear-admin-temporal', async (req, res) => {
+    // CAMBIA 'UNA_CLAVE_SUPER_SECRETA' POR ALGO TUYO Y ÚNICO
+    if (req.query.key !== 'UNA_CLAVE_SUPER_SECRETA') {
+        return res.status(403).json({ message: 'Acceso denegado' });
+    }
+    try {
+        const existe = await Usuario.findOne({ email: 'admin@makand.com' });
+        if (existe) return res.status(400).json({ message: 'El usuario ya existe' });
+
+        const hashedPassword = await bcrypt.hash('123456', 10);
+        const nuevo = new Usuario({
+            nombre: 'Administrador',
+            email: 'admin@makand.com',
+            password: hashedPassword,
+            rol: 'admin'
+        });
+        await nuevo.save();
+        res.status(201).json({ message: 'Usuario admin creado exitosamente. ¡BORRA ESTA RUTA DESPUÉS DE USARLA!' });
+    } catch (err) {
+        res.status(500).json({ message: 'Error al crear usuario', error: err.message });
+    }
+});
+// -------------------------------------------------
+
 app.get('/', (req, res) => res.send('API de Logística funcionando correctamente 🚀'));
 
 const mongoURI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/logistica'; 
 
-// --- CONEXIÓN Y EL LISTEN ---
 mongoose.connect(mongoURI)
   .then(() => {
     console.log("📍 Conectado a:", process.env.MONGO_URI ? "ATLAS (Nube)" : "LOCAL (Tu PC)");
-    
-    // El servidor arranca usando la variable PORT definida al inicio
     app.listen(PORT, () => { 
         console.log(`🚀 Servidor listo en http://localhost:${PORT}`); 
     });
@@ -55,13 +73,15 @@ const { Combustible } = require('./models/combustible');
 app.post('/api/login', async (req, res) => {
   const { email, password } = req.body;
   try {
-    const user = await Usuario.findOne({ email, password });
-    if (user) {
+    const user = await Usuario.findOne({ email });
+    if (!user) return res.status(401).json({ message: "Credenciales inválidas" });
+
+    // Comparamos password cifrado
+    const esCorrecto = await bcrypt.compare(password, user.password);
+    
+    if (esCorrecto) {
       const claveSecreta = process.env.JWT_SECRET;
-      
-      if (!claveSecreta) {
-        throw new Error('FATAL: JWT_SECRET no está definido en el archivo .env');
-      }
+      if (!claveSecreta) throw new Error('FATAL: JWT_SECRET no está definido');
 
       const token = jwt.sign(
         { id: user._id, nombre: user.nombre, email: user.email, rol: user.rol }, 
@@ -73,7 +93,6 @@ app.post('/api/login', async (req, res) => {
       res.status(401).json({ message: "Credenciales inválidas" });
     }
   } catch (error) {
-    console.error("--- ERROR EN EL SERVIDOR ---");
     console.error(error); 
     res.status(500).json({ error: "Error en el servidor", detalles: error.message });
   }
@@ -83,10 +102,8 @@ app.post('/api/login', async (req, res) => {
 // RUTAS: ENTREGAS
 // ==========================================
 app.get('/api/entregas', verificarAuth, async (req, res) => {
-  try {
-    const lista = await Formulario.find().sort({ fecha: -1 });
-    res.json(lista);
-  } catch (error) { res.status(500).json({ error: 'Error al obtener entregas', detalles: error.message }); }
+  try { const lista = await Formulario.find().sort({ fecha: -1 }); res.json(lista); } 
+  catch (error) { res.status(500).json({ error: 'Error al obtener entregas', detalles: error.message }); }
 });
 
 app.get('/api/entregas/historial', verificarAuth, async (req, res) => {
@@ -119,17 +136,11 @@ app.get('/api/mapa', verificarAuth, async (req, res) => {
     const lista = await Formulario.find().sort({ fecha: -1 }); 
     const listaConCoordenadas = lista.map(item => {
       const doc = item.toObject ? item.toObject() : item;
-      return {
-        ...doc,
-        lat: doc.lat || 4.7110,  
-        lon: doc.lon || -74.0721 
-      };
+      return { ...doc, lat: doc.lat || 4.7110, lon: doc.lon || -74.0721 };
     });
     res.json(listaConCoordenadas); 
   } 
-  catch (error) { 
-    res.status(500).json({ error: 'Error al obtener datos' }); 
-  }
+  catch (error) { res.status(500).json({ error: 'Error al obtener datos' }); }
 });
 
 app.post('/api/entregas', verificarAuth, async (req, res) => {
@@ -202,7 +213,12 @@ app.delete('/api/vehiculos/:id', verificarAuth, async (req, res) => {
 // RUTAS: AUTENTICACIÓN
 // ==========================================
 app.post('/api/register', async (req, res) => {
-  try { const nuevoUsuario = new Usuario(req.body); await nuevoUsuario.save(); res.status(201).json({ message: "Usuario creado correctamente" }); } 
+  try { 
+      const hashedPassword = await bcrypt.hash(req.body.password, 10);
+      const nuevoUsuario = new Usuario({ ...req.body, password: hashedPassword }); 
+      await nuevoUsuario.save(); 
+      res.status(201).json({ message: "Usuario creado correctamente" }); 
+  } 
   catch (error) { res.status(400).json({ message: "Error al crear usuario", error }); }
 });
 
@@ -291,7 +307,6 @@ app.delete('/api/combustible/:id', verificarAuth, async (req, res) => {
   catch (error) { res.status(500).json({ error: error.message }); }
 });
 
-// NUEVO: MANEJADOR DE ERRORES GLOBAL
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ message: 'Algo salió mal en el servidor', error: err.message });
