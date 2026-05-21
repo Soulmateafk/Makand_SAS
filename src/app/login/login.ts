@@ -28,32 +28,33 @@ export class LoginComponent {
     });
   }
 
-  onLogin() {
+ onLogin() {
     if (this.loginForm.valid) {
-      this.isLoading = true;
+      this.isLoading = true; // Empieza a cargar
       this.errorMessage = '';
 
-      // LLAMADA REAL A TU SERVIDOR NODE.JS / MONGODB
       this.authService.login(this.loginForm.value).subscribe({
         next: (res) => {
-          // 1. Guardamos los datos básicos del usuario que ya traías
+          // --- AQUÍ ESTABA EL PROBLEMA ---
+          this.isLoading = false; // <--- ¡DEBES APAGAR EL CARGADOR AQUÍ!
+          // -------------------------------
+
+          // 1. Guardamos los datos
           localStorage.setItem('user', JSON.stringify(res.user));
 
-          // 🔑 2. GUARDAMOS EL TOKEN JWT SEGURO QUE VIENE DEL BACKEND
-          // Si el servidor envía 'res.token', lo almacenamos para usarlo en las peticiones HTTP
+          // 2. Guardamos el token
           if (res.token) {
-          localStorage.setItem('token_logistica', res.token);          }
+             localStorage.setItem('token_logistica', res.token);
+          }
 
-          // 3. Redireccionamos al dashboard
+          // 3. Redireccionamos
           this.router.navigate(['/dashboard']);
         },
         error: (err) => {
-          // Si el servidor responde 401 (Credenciales inválidas)
           this.errorMessage = 'Credenciales corporativas inválidas.';
-          this.isLoading = false;
+          this.isLoading = false; // Aquí sí lo tenías bien
         }
       });
-
     } else {
       this.loginForm.markAllAsTouched();
     }
