@@ -5,11 +5,9 @@ const helmet = require('helmet'); // Seguridad adicional
 const mongoose = require('mongoose'); 
 const jwt = require('jsonwebtoken');
 const app = express();
-const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, () => {
-  console.log(`Servidor corriendo en el puerto ${PORT}`);
-});
+// Definimos el puerto aquí para que esté disponible en todo el archivo
+const PORT = process.env.PORT || 3000;
 
 // 🛡️ IMPORTAR EL VIGILANTE DE SEGURIDAD (MIDDLEWARE)
 const verificarAuth = require('./middlewares/auth');
@@ -17,7 +15,7 @@ const verificarAuth = require('./middlewares/auth');
 // 🛠️ CONFIGURACIÓN DE SEGURIDAD Y CORS
 app.use(helmet()); 
 app.use(cors({
-  origin: 'http://localhost:4200',
+  origin: '*', // Permitido acceso general para evitar bloqueos
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
@@ -31,12 +29,14 @@ app.get('/', (req, res) => res.send('API de Logística funcionando correctamente
 const mongoURI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/logistica'; 
 
 // --- MODIFICACIÓN: LA CONEXIÓN Y EL LISTEN AHORA VAN JUNTOS ---
+// Hemos eliminado el app.listen inicial para evitar conflictos y asegurar que la BD conecte primero
 mongoose.connect(mongoURI)
   .then(() => {
     console.log("📍 Conectado a:", process.env.MONGO_URI ? "ATLAS (Nube)" : "LOCAL (Tu PC)");
-    // El servidor solo arranca una vez confirmada la conexión
-    app.listen(port, () => { 
-        console.log(`🚀 Servidor listo en http://localhost:${port}`); 
+    
+    // El servidor solo arranca una vez confirmada la conexión y usando la variable correcta PORT
+    app.listen(PORT, () => { 
+        console.log(`🚀 Servidor listo en http://localhost:${PORT}`); 
     });
   })
   .catch(err => {
@@ -59,7 +59,6 @@ app.post('/api/login', async (req, res) => {
   try {
     const user = await Usuario.findOne({ email, password });
     if (user) {
-      // 🔒 SEGURIDAD: Solo usamos process.env.JWT_SECRET. Fallamos si no existe.
       const claveSecreta = process.env.JWT_SECRET;
       
       if (!claveSecreta) {
@@ -85,7 +84,6 @@ app.post('/api/login', async (req, res) => {
 // ==========================================
 // RUTAS: ENTREGAS
 // ==========================================
-
 app.get('/api/entregas', verificarAuth, async (req, res) => {
   try {
     const lista = await Formulario.find().sort({ fecha: -1 });
