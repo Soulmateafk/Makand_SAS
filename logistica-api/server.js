@@ -41,7 +41,7 @@ app.get('/api/crear-admin-temporal', async (req, res) => {
         const nuevo = new Usuario({
             nombre: 'Administrador',
             email: 'admin@makand.com',
-            password: hashedPassword,
+            password: 123456,
             rol: 'admin'
         });
         await nuevo.save();
