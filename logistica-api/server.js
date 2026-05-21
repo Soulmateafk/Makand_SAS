@@ -4,7 +4,7 @@ const cors = require('cors');
 const helmet = require('helmet'); 
 const mongoose = require('mongoose'); 
 const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs'); // <--- AÑADIDO: Necesario para cifrar
+const bcrypt = require('bcryptjs'); 
 const app = express();
 
 const PORT = process.env.PORT || 3000;
@@ -20,10 +20,16 @@ app.use(cors({
 app.use(express.json({ limit: '50mb' })); 
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-// --- PUERTA SECRETA TEMPORAL PARA CREAR ADMIN ---
-// AHORA ES app.get PARA QUE EL NAVEGADOR PUEDA ENTRAR
+// --- MODELOS ---
+const Formulario = require('./models/entrega'); 
+const Vehiculo = require('./models/Vehiculo');
+const Conductor = require('./models/Conductor');
+const Mantenimiento = require('./models/Mantenimiento');
+const Usuario = require('./models/Usuario');
+const { Combustible } = require('./models/combustible'); 
+
+// --- RUTA TEMPORAL (Recuerda borrarla una vez confirmes que logueas) ---
 app.get('/api/crear-admin-temporal', async (req, res) => {
-    // CAMBIA 'UNA_CLAVE_SUPER_SECRETA' POR ALGO TUYO Y ÚNICO
     if (req.query.key !== 'UNA_CLAVE_SUPER_SECRETA') {
         return res.status(403).json({ message: 'Acceso denegado' });
     }
@@ -39,47 +45,30 @@ app.get('/api/crear-admin-temporal', async (req, res) => {
             rol: 'admin'
         });
         await nuevo.save();
-        res.status(201).json({ message: 'Usuario admin creado exitosamente. ¡BORRA ESTA RUTA DESPUÉS DE USARLA!' });
+        res.status(201).json({ message: 'Usuario admin creado exitosamente.' });
     } catch (err) {
         res.status(500).json({ message: 'Error al crear usuario', error: err.message });
     }
 });
-// -------------------------------------------------
 
-app.get('/', (req, res) => res.send('API de Logística funcionando correctamente 🚀'));
-
-const mongoURI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/logistica'; 
-
-mongoose.connect(mongoURI)
-  .then(() => {
-    console.log("📍 Conectado a:", process.env.MONGO_URI ? "ATLAS (Nube)" : "LOCAL (Tu PC)");
-    app.listen(PORT, () => { 
-        console.log(`🚀 Servidor listo en http://localhost:${PORT}`); 
-    });
-  })
-  .catch(err => {
-    console.error("❌ ERROR CRÍTICO AL CONECTAR A LA BD:", err);
-  });
-
-const Formulario = require('./models/entrega'); 
-const Vehiculo = require('./models/Vehiculo');
-const Conductor = require('./models/Conductor');
-const Mantenimiento = require('./models/Mantenimiento');
-const Usuario = require('./models/Usuario');
-const { Combustible } = require('./models/combustible'); 
-
-// ==========================================
-// RUTA: LOGIN
-// ==========================================
+// --- RUTA LOGIN UNIFICADA ---
 app.post('/api/login', async (req, res) => {
   const { email, password } = req.body;
   try {
     const user = await Usuario.findOne({ email });
-    if (!user) return res.status(401).json({ message: "Credenciales inválidas" });
-
-    // Comparamos password cifrado
-    const esCorrecto = await bcrypt.compare(password, user.password);
     
+    if (!user) {
+        return res.status(401).json({ message: "Usuario no encontrado" });
+    }
+
+    // Logs para debug
+    console.log("Intentando loguear usuario:", user.email);
+    console.log("Password recibido:", password);
+    console.log("Password en BD (hash):", user.password);
+
+    const esCorrecto = await bcrypt.compare(password, user.password);
+    console.log("¿La contraseña coincide?:", esCorrecto);
+
     if (esCorrecto) {
       const claveSecreta = process.env.JWT_SECRET;
       if (!claveSecreta) throw new Error('FATAL: JWT_SECRET no está definido');
@@ -99,9 +88,20 @@ app.post('/api/login', async (req, res) => {
   }
 }); 
 
-// ==========================================
-// RUTAS: ENTREGAS
-// ==========================================
+// --- RESTO DE RUTAS ---
+app.get('/', (req, res) => res.send('API de Logística funcionando correctamente 🚀'));
+
+app.post('/api/register', async (req, res) => {
+  try { 
+      const hashedPassword = await bcrypt.hash(req.body.password, 10);
+      const nuevoUsuario = new Usuario({ ...req.body, password: hashedPassword }); 
+      await nuevoUsuario.save(); 
+      res.status(201).json({ message: "Usuario creado correctamente" }); 
+  } 
+  catch (error) { res.status(400).json({ message: "Error al crear usuario", error }); }
+});
+
+// Entregas
 app.get('/api/entregas', verificarAuth, async (req, res) => {
   try { const lista = await Formulario.find().sort({ fecha: -1 }); res.json(lista); } 
   catch (error) { res.status(500).json({ error: 'Error al obtener entregas', detalles: error.message }); }
@@ -164,9 +164,7 @@ app.delete('/api/entregas/:id', verificarAuth, async (req, res) => {
   catch (error) { res.status(500).json({ error: 'Error al eliminar' }); }
 });
 
-// ==========================================
-// RUTAS: CONDUCTORES
-// ==========================================
+// Conductores
 app.get('/api/conductores', verificarAuth, async (req, res) => {
   try { const lista = await Conductor.find().sort({ _id: -1 }); res.json(lista); } 
   catch (error) { res.status(500).json({ error: 'Error al obtener conductores' }); }
@@ -187,9 +185,7 @@ app.delete('/api/conductores/:id', verificarAuth, async (req, res) => {
   catch (error) { res.status(500).json({ error: 'Error al eliminar conductor' }); }
 });
 
-// ==========================================
-// RUTAS: VEHÍCULOS
-// ==========================================
+// Vehículos
 app.get('/api/vehiculos', verificarAuth, async (req, res) => {
   try { const lista = await Vehiculo.find().sort({ _id: -1 }); res.json(lista); } 
   catch (error) { res.status(500).json({ message: "Error al obtener vehículos", error }); }
@@ -210,22 +206,7 @@ app.delete('/api/vehiculos/:id', verificarAuth, async (req, res) => {
   catch (error) { res.status(500).json({ message: "Error al eliminar", error }); }
 });
 
-// ==========================================
-// RUTAS: AUTENTICACIÓN
-// ==========================================
-app.post('/api/register', async (req, res) => {
-  try { 
-      const hashedPassword = await bcrypt.hash(req.body.password, 10);
-      const nuevoUsuario = new Usuario({ ...req.body, password: hashedPassword }); 
-      await nuevoUsuario.save(); 
-      res.status(201).json({ message: "Usuario creado correctamente" }); 
-  } 
-  catch (error) { res.status(400).json({ message: "Error al crear usuario", error }); }
-});
-
-// ==========================================
-// RUTAS: MANTENIMIENTOS
-// ==========================================
+// Mantenimiento
 const fnGetMant = async (req, res) => {
   try { const lista = await Mantenimiento.find().sort({ fechaEntrada: -1 }); res.json(lista); } 
   catch (error) { res.status(500).json({ message: "Error", detalles: error.message }); }
@@ -275,9 +256,7 @@ app.get('/api/mantenimiento/stats', verificarAuth, async (req, res) => {
   } catch (error) { res.status(500).json({ error: 'No se pudieron calcular las estadísticas' }); }
 });
 
-// ==========================================
-// RUTAS: COMBUSTIBLE
-// ==========================================
+// Combustible
 app.get('/api/combustibles/exportar-excel', verificarAuth, async (req, res) => {
   try { await Combustible.exportarAExcel(req.query, res); } catch (error) { res.status(500).json({ error: 'Error al procesar la exportación' }); }
 });
@@ -312,3 +291,16 @@ app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ message: 'Algo salió mal en el servidor', error: err.message });
 });
+
+// Conexión final
+const mongoURI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/logistica'; 
+mongoose.connect(mongoURI)
+  .then(() => {
+    console.log("📍 Conectado a:", process.env.MONGO_URI ? "ATLAS (Nube)" : "LOCAL (Tu PC)");
+    app.listen(PORT, () => { 
+        console.log(`🚀 Servidor listo en http://localhost:${PORT}`); 
+    });
+  })
+  .catch(err => {
+    console.error("❌ ERROR CRÍTICO AL CONECTAR A LA BD:", err);
+  });
