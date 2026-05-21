@@ -10,6 +10,9 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const verificarAuth = require('./middlewares/auth');
 
+// --- CORRECCIÓN 1: Necesario para que Render acepte las peticiones ---
+app.set('trust proxy', 1);
+
 app.use(helmet()); 
 app.use(cors({
   origin: '*', 
@@ -28,7 +31,7 @@ const Mantenimiento = require('./models/Mantenimiento');
 const Usuario = require('./models/Usuario');
 const { Combustible } = require('./models/combustible'); 
 
-// --- RUTA TEMPORAL (Recuerda borrarla una vez confirmes que logueas) ---
+// --- RUTA TEMPORAL ---
 app.get('/api/crear-admin-temporal', async (req, res) => {
     if (req.query.key !== 'UNA_CLAVE_SUPER_SECRETA') {
         return res.status(403).json({ message: 'Acceso denegado' });
@@ -37,11 +40,12 @@ app.get('/api/crear-admin-temporal', async (req, res) => {
         const existe = await Usuario.findOne({ email: 'admin@makand.com' });
         if (existe) return res.status(400).json({ message: 'El usuario ya existe' });
 
+        // --- CORRECCIÓN 2: Guardamos el HASH de la contraseña ---
         const hashedPassword = await bcrypt.hash('123456', 10);
         const nuevo = new Usuario({
             nombre: 'Administrador',
             email: 'admin@makand.com',
-            password: 123456,
+            password: hashedPassword, // Aquí estaba el error
             rol: 'admin'
         });
         await nuevo.save();
@@ -61,7 +65,6 @@ app.post('/api/login', async (req, res) => {
         return res.status(401).json({ message: "Usuario no encontrado" });
     }
 
-    // Logs para debug
     console.log("Intentando loguear usuario:", user.email);
     console.log("Password recibido:", password);
     console.log("Password en BD (hash):", user.password);
