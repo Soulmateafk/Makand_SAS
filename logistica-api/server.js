@@ -10,7 +10,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const verificarAuth = require('./middlewares/auth');
 
-// --- CORRECCIÓN 1: Necesario para que Render acepte las peticiones ---
+// --- CONFIGURACIÓN PARA RENDER ---
 app.set('trust proxy', 1);
 
 app.use(helmet()); 
@@ -31,30 +31,6 @@ const Mantenimiento = require('./models/Mantenimiento');
 const Usuario = require('./models/Usuario');
 const { Combustible } = require('./models/combustible'); 
 
-// --- RUTA TEMPORAL ---
-app.get('/api/crear-admin-temporal', async (req, res) => {
-    if (req.query.key !== 'UNA_CLAVE_SUPER_SECRETA') {
-        return res.status(403).json({ message: 'Acceso denegado' });
-    }
-    try {
-        const existe = await Usuario.findOne({ email: 'admin@makand.com' });
-        if (existe) return res.status(400).json({ message: 'El usuario ya existe' });
-
-        // --- CORRECCIÓN 2: Guardamos el HASH de la contraseña ---
-        const hashedPassword = await bcrypt.hash('123456', 10);
-        const nuevo = new Usuario({
-            nombre: 'Administrador',
-            email: 'admin@makand.com',
-            password: hashedPassword, // Aquí estaba el error
-            rol: 'admin'
-        });
-        await nuevo.save();
-        res.status(201).json({ message: 'Usuario admin creado exitosamente.' });
-    } catch (err) {
-        res.status(500).json({ message: 'Error al crear usuario', error: err.message });
-    }
-});
-
 // --- RUTA LOGIN UNIFICADA ---
 app.post('/api/login', async (req, res) => {
   const { email, password } = req.body;
@@ -65,12 +41,7 @@ app.post('/api/login', async (req, res) => {
         return res.status(401).json({ message: "Usuario no encontrado" });
     }
 
-    console.log("Intentando loguear usuario:", user.email);
-    console.log("Password recibido:", password);
-    console.log("Password en BD (hash):", user.password);
-
     const esCorrecto = await bcrypt.compare(password, user.password);
-    console.log("¿La contraseña coincide?:", esCorrecto);
 
     if (esCorrecto) {
       const claveSecreta = process.env.JWT_SECRET;
