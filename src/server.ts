@@ -17,9 +17,21 @@ const app = express();
 // --- CONFIGURACIÓN PARA RENDER ---
 app.set('trust proxy', 1);
 
-// CONFIGURACIÓN CORRECTA DENTRO DE LOS PARÉNTESIS
-const angularApp = new AngularNodeAppEngine({
+// 👇 SOLUCIÓN: Limpiar cabeceras de Render para evitar el error de SSRF de Angular 👇
+app.use((req, res, next) => {
+  // Eliminamos el rastro del proxy para que Angular no active su bloqueo de seguridad
+  delete req.headers['x-forwarded-for'];
+  delete req.headers['x-forwarded-host'];
+  delete req.headers['x-forwarded-proto'];
+  
+  // Forzamos que Angular reconozca tu dominio legítimo
+  req.headers.host = 'makand-sas-front.onrender.com';
+  next();
 });
+// 👆 HASTA AQUÍ LA SOLUCIÓN 👆
+
+// Motor de Angular SSR (sin parámetros extraños adentro)
+const angularApp = new AngularNodeAppEngine();
 
 /**
  * Servir archivos estáticos del navegador
