@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Panel de Operaciones Logísticas</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        /* ... (Tus estilos originales se mantienen intactos) ... */
+        :root{ --bg: #10151c; --panel: #171e27; --panel-2: #1d2530; --line: #2a3340; --ink: #e7eaee; --ink-dim: #8b96a5; --teal: #2dd4bf; --amber: #f2a93c; --red: #e2564f; --font-display: 'Oswald', sans-serif; --font-body: 'IBM Plex Sans', sans-serif; --font-mono: 'IBM Plex Mono', monospace; }
+        *{box-sizing:border-box; margin:0; padding:0;}
+        body{ background:var(--bg); color:var(--ink); font-family:var(--font-body); line-height:1.4; padding-bottom:60px; }
+        .roadline{ height:3px; background: repeating-linear-gradient(90deg, var(--amber) 0 24px, transparent 24px 44px); opacity:.55; }
+        header.top{ padding:36px 5vw 24px; border-bottom:1px solid var(--line); display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap;}
+        header.top .eyebrow{ font-family:var(--font-mono); font-size:12px; letter-spacing:.18em; color:var(--teal); text-transform:uppercase; }
+        header.top h1{ font-family:var(--font-display); font-weight:600; font-size:clamp(28px,4vw,46px); letter-spacing:.01em; margin-top:6px; text-transform:uppercase; }
+        header.top p{ color:var(--ink-dim); margin-top:8px; max-width:640px; font-size:14.5px; }
+        
+        /* Estilos para el input de carga de archivos */
+        .upload-container { background: var(--panel); padding: 15px; border: 1px dashed var(--amber); border-radius: 8px; margin-top: 15px;}
+        .upload-container label { font-family: var(--font-mono); font-size: 12px; color: var(--amber); display: block; margin-bottom: 8px;}
+        .upload-container input { color: var(--ink); font-family: var(--font-mono); font-size: 11px;}
+        
+        /* ... (El resto de tu CSS) ... */
+        .section{ padding:44px 5vw; border-bottom:1px solid var(--line); } .section:last-of-type{border-bottom:none;} .section-head{ display:flex; align-items:baseline; gap:16px; margin-bottom:26px; flex-wrap:wrap; } .section-num{ font-family:var(--font-mono); color:var(--amber); font-size:15px; border:1px solid var(--amber); padding:2px 9px; border-radius:3px; } .section-head h2{ font-family:var(--font-display); font-size:clamp(20px,2.4vw,28px); text-transform:uppercase; letter-spacing:.02em; } .section-head .src{ margin-left:auto; font-family:var(--font-mono); font-size:11.5px; color:var(--ink-dim); border-left:2px solid var(--line); padding-left:12px; } .section-note{ font-size:13px; color:var(--ink-dim); margin-bottom:24px; max-width:700px; } .kpi-row{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px; margin-bottom:28px; } .kpi{ background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:16px 18px; } .kpi .label{ font-family:var(--font-mono); font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-dim); } .kpi .value{ font-family:var(--font-mono); font-size:clamp(22px,2.6vw,32px); font-weight:600; margin-top:6px; } .kpi .sub{ font-size:11.5px; color:var(--ink-dim); margin-top:2px; } .teal{color:var(--teal);} .amber{color:var(--amber);} .red{color:var(--red);} .grid-2{ display:grid; grid-template-columns:1.1fr 1fr; gap:22px; } @media (max-width:880px){ .grid-2{grid-template-columns:1fr;} } .card{ background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:20px 22px; } .card h3{ font-family:var(--font-display); font-size:15px; text-transform:uppercase; letter-spacing:.03em; color:var(--ink); margin-bottom:14px; font-weight:500; } .chart-wrap{position:relative; height:260px;} .chart-wrap.tall{height:320px;} table{ width:100%; border-collapse:collapse; font-size:13px; } th{ text-align:left; font-family:var(--font-mono); font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-dim); padding:8px 10px; border-bottom:1px solid var(--line); } td{ padding:9px 10px; border-bottom:1px solid var(--line); font-family:var(--font-mono); } td.name{font-family:var(--font-body); font-weight:500;} tr:last-child td{border-bottom:none;} .pill{ display:inline-block; padding:2px 9px; border-radius:20px; font-size:11px; font-family:var(--font-mono); font-weight:600; } .pill.good{background:rgba(45,212,191,.14); color:var(--teal);} .pill.mid{background:rgba(242,169,60,.16); color:var(--amber);} .pill.bad{background:rgba(226,86,79,.16); color:var(--red);} .legend-dot{ display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px; }
+    </style>
+</head>
+<body>
+
+<header class="top">
+    <div>
+        <div class="eyebrow">Panel de operaciones · Julio 2026</div>
+        <h1>Cronograma de viajes &amp; cumplimiento</h1>
+        <p>Selecciona los 3 archivos Excel para alimentar los datos del tablero en tiempo real.</p>
+    </div>
+    
+    <div class="upload-container">
+        <label>📥 CARGAR ARCHIVOS EXCEL (.xlsx)</label>
+        <input type="file" id="excelUploader" multiple accept=".xlsx, .xls" (change)="enviarArchivos($event)">
+    </div>
+</header>
+
+<div class="roadline"></div>
+
+<section class="section">
+    <div class="section-head">
+        <span class="section-num">01</span>
+        <h2>Viajes por transportadora — Planta Makand</h2>
+        <span class="src" id="srcViajeros">{{ nombreArchivo }}</span>
+    </div>
+    <div class="kpi-row">
+        <div class="kpi"><div class="label">Viajes totales</div><div class="value" id="kpiViajesTotales">{{ viajesTotales }}</div><div class="sub">Del excel cargado</div></div>
+        
+        <div class="kpi"><div class="label">Transportadora líder</div><div class="value amber" id="kpiLider">--</div><div class="sub">Mayor volumen</div></div>
+    </div>
+    <div class="grid-2">
+        <div class="card">
+            <h3>Viajes por transportadora</h3>
+            <div class="chart-wrap"><canvas #chartTranspCanvas id="chartTransp"></canvas></div>
+        </div>
+        </div>
+</section>
+
+</body>
+</html>

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterOutlet, Router, NavigationEnd, RouterLink } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { AuthService } from './login/auth.service';
+import * as XLSX from 'xlsx';
 
 @Component({
   selector: 'app-root',
