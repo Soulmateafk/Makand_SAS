@@ -1,145 +1,137 @@
-<div class="dashboard-dark">
-  <header class="top-nav">
-    <div>
-      <div class="eyebrow">Panel de Operaciones Logísticas · 2026</div>
-      <h1>Cronograma de viajes & cumplimiento</h1>
-      <p>Selecciona los 3 archivos Excel para alimentar los datos del tablero en tiempo real.</p>
-    </div>
+<header class="top">
+  <div class="eyebrow">Panel de operaciones · Julio 2026</div>
+  <h1>Cronograma de viajes &amp; cumplimiento</h1>
+  <p>Vista consolidada de tres reportes: viajes por transportadora hacia planta MAKAND, cumplimiento de horarios en tiendas y cumplimiento de recogida en agricultores. Datos leídos directamente de los archivos Excel, sin modificarlos.</p>
+</header>
+<div class="roadline"></div>
+
+<section class="section">
+  <div class="section-head">
+    <span class="section-num">01</span>
+    <h2>Viajes por transportadora — Planta Makand</h2>
     <div class="upload-box">
-      <label for="excelUploader">📥 CARGAR ARCHIVOS EXCEL (.xlsx)</label>
-      <input type="file" id="excelUploader" multiple accept=".xlsx, .xls" (change)="enviarArchivos($event)">
+      <span class="src">{{ makandState.src }}</span>
+      <button class="upload-btn" (click)="fileMakand.click()">Actualizar archivo</button>
+      <input type="file" #fileMakand accept=".xlsx,.xls" style="display:none" (change)="handleUpload($event,'makand')">
+      <span class="upload-status" [ngClass]="makandState.statusClass">{{ makandState.status }}</span>
     </div>
-  </header>
-
-  <div class="divider-line"></div>
-
-  <section class="section-container">
-    <div class="section-header">
-      <span class="badge">01</span>
-      <h2>Viajes por transportadora — Planta Makand</h2>
-      <span class="file-status" [ngClass]="{'loaded': archivoMakand !== 'Falta archivo', 'missing': archivoMakand === 'Falta archivo'}">
-        {{ archivoMakand }}
-      </span>
+  </div>
+  <p class="section-note">{{ makandState.note }}</p>
+  <div class="kpi-row">
+    <div class="kpi"><div class="label">Viajes totales</div><div class="value">{{ makandState.kpiTotal }}</div><div class="sub">{{ makandState.kpiPeriodo }}</div></div>
+    <div class="kpi"><div class="label">Cumplimiento llegada</div><div class="value teal">{{ makandState.kpiCumple }}</div><div class="sub">promedio general</div></div>
+    <div class="kpi"><div class="label">Cajas movilizadas</div><div class="value">{{ makandState.kpiCajas }}</div><div class="sub">{{ makandState.kpiCajasSub }}</div></div>
+    <div class="kpi"><div class="label">Transportadora líder</div><div class="value amber">{{ makandState.kpiLider }}</div><div class="sub">{{ makandState.kpiLiderSub }}</div></div>
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <h3>Viajes por transportadora</h3>
+      <div class="chart-wrap"><canvas #chartTransp></canvas></div>
     </div>
-
-    <div class="kpi-grid">
-      <div class="kpi-card"><div class="label">Viajes Totales</div><div class="value">{{ kpiMakand.totales }}</div><div class="subtext">junio 2026</div></div>
-      <div class="kpi-card"><div class="label">Cumplimiento Llegada</div><div class="value teal">{{ kpiMakand.cumplimiento }}%</div><div class="subtext">promedio general</div></div>
-      <div class="kpi-card"><div class="label">Cajas Movilizadas</div><div class="value">{{ kpiMakand.cajas }}</div><div class="subtext">MAKAND+ARSITRANS+POLAR</div></div>
-      <div class="kpi-card"><div class="label">Transportadora Líder</div><div class="value amber">{{ kpiMakand.lider }}</div><div class="subtext">{{ kpiMakand.porcLider }}% de los viajes</div></div>
+    <div class="card">
+      <h3>Detalle por transportadora</h3>
+      <table>
+        <thead><tr><th>Transportadora</th><th>Viajes</th><th>% del total</th><th>Cumple llegada</th><th>Cumple cargue</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let t of makandState.table">
+            <td class="name"><span class="legend-dot" [style.background]="t.color"></span>{{ t.name }}</td>
+            <td>{{ t.total }}</td><td>{{ t.pct }}</td>
+            <td><span class="pill" [ngClass]="t.llegadaClass">{{ t.llegada }}</span></td>
+            <td><span class="pill" [ngClass]="t.cargueClass">{{ t.cargue }}</span></td>
+          </tr>
+        </tbody>
+      </table>
+      <h3 style="margin-top:22px;">Viajes por almacén destino</h3>
+      <div class="chart-wrap" style="height:180px;"><canvas #chartAlmacen></canvas></div>
     </div>
+  </div>
+</section>
 
-    <div class="dashboard-grid">
-      <div class="card bg-panel animate-fade">
-        <h3>Viajes por transportadora</h3>
-        <div class="chart-container"><canvas #chartMakandDonut></canvas></div>
-      </div>
-      <div class="card bg-panel block-right">
-        <h3>Detalle por transportadora</h3>
-        <div class="table-responsive">
-          <table>
-            <thead>
-              <tr><th>Transportadora</th><th>Viajes</th><th>% del Total</th><th>Cumple Llegada</th><th>Cumple Cargue</th></tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let t of tablaMakand">
-                <td class="bold text-light">{{ t.nombre }}</td>
-                <td>{{ t.viajes }}</td>
-                <td>{{ t.porc }}%</td>
-                <td class="teal font-mono">{{ t.cumpleLlegada }}%</td>
-                <td class="amber font-mono">{{ t.cumpleCargue }}%</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <h3 class="margin-top">Viajes por almacén destino</h3>
-        <div class="chart-container-sm"><canvas #chartMakandBar></canvas></div>
-      </div>
+<section class="section">
+  <div class="section-head">
+    <span class="section-num">02</span>
+    <h2>Cumplimiento de horarios — Tiendas</h2>
+    <div class="upload-box">
+      <span class="src">{{ tiendasState.src }}</span>
+      <button class="upload-btn" (click)="fileTiendas.click()">Actualizar archivo</button>
+      <input type="file" #fileTiendas accept=".xlsx,.xls" style="display:none" (change)="handleUpload($event,'tiendas')">
+      <span class="upload-status" [ngClass]="tiendasState.statusClass">{{ tiendasState.status }}</span>
     </div>
-  </section>
+  </div>
+  <p class="section-note">{{ tiendasState.note }}</p>
+  <div class="kpi-row">
+    <div class="kpi"><div class="label">Registros de ruta</div><div class="value">{{ tiendasState.kpiTotal }}</div><div class="sub">{{ tiendasState.kpiPeriodo }}</div></div>
+    <div class="kpi"><div class="label">Cumple</div><div class="value teal">{{ tiendasState.kpiCumple }}</div><div class="sub">{{ tiendasState.kpiCumpleSub }}</div></div>
+    <div class="kpi"><div class="label">Cumple parcial</div><div class="value amber">{{ tiendasState.kpiParcial }}</div><div class="sub">{{ tiendasState.kpiParcialSub }}</div></div>
+    <div class="kpi"><div class="label">No cumple</div><div class="value red">{{ tiendasState.kpiNoCumple }}</div><div class="sub">{{ tiendasState.kpiNoCumpleSub }}</div></div>
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <h3>Distribución de cumplimiento</h3>
+      <div class="chart-wrap"><canvas #chartTiendas></canvas></div>
+    </div>
+    <div class="card">
+      <h3>Cumplimiento por CEDI de despacho</h3>
+      <table>
+        <thead><tr><th>CEDI</th><th>Registros</th><th>Participación</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let c of tiendasState.tableCedi">
+            <td class="name">{{ c.name }}</td><td>{{ c.total }}</td><td>{{ c.pct }}</td>
+          </tr>
+        </tbody>
+      </table>
+      <h3 style="margin-top:22px;">Rutas con más registros <span>{{ tiendasState.rutasMesLabel }}</span></h3>
+      <table>
+        <thead><tr><th>Ruta / región</th><th>Registros</th><th>% Cumple</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let r of tiendasState.tableRutas">
+            <td class="name">{{ r.name }}</td><td>{{ r.total }}</td>
+            <td><span class="pill" [ngClass]="r.pctClass">{{ r.pct }}</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
 
-  <section class="section-container">
-    <div class="section-header">
-      <span class="badge">02</span>
-      <h2>Cumplimiento de Horarios — Tiendas</h2>
-      <span class="file-status" [ngClass]="{'loaded': archivoTiendas !== 'Falta archivo', 'missing': archivoTiendas === 'Falta archivo'}">
-        {{ archivoTiendas }}
-      </span>
+<section class="section">
+  <div class="section-head">
+    <span class="section-num">03</span>
+    <h2>Cumplimiento de recogida — Agricultores</h2>
+    <div class="upload-box">
+      <span class="src">{{ agriState.src }}</span>
+      <button class="upload-btn" (click)="fileAgri.click()">Actualizar archivo</button>
+      <input type="file" #fileAgri accept=".xlsx,.xls" style="display:none" (change)="handleUpload($event,'agri')">
+      <span class="upload-status" [ngClass]="agriState.statusClass">{{ agriState.status }}</span>
     </div>
-
-    <div class="kpi-grid">
-      <div class="kpi-card"><div class="label">Registros de Ruta</div><div class="value">{{ kpiTiendas.registros }}</div><div class="subtext">junio 2026</div></div>
-      <div class="kpi-card"><div class="label">Cumple</div><div class="value teal">{{ kpiTiendas.cumple }}%</div><div class="subtext">314 registros</div></div>
-      <div class="kpi-card"><div class="label">Cumple Parcial</div><div class="value amber">{{ kpiTiendas.parcial }}%</div><div class="subtext">117 registros</div></div>
-      <div class="kpi-card"><div class="label">No Cumple</div><div class="value red">{{ kpiTiendas.noCumple }}%</div><div class="subtext">498 registros</div></div>
+  </div>
+  <p class="section-note">{{ agriState.note }}</p>
+  <div class="kpi-row">
+    <div class="kpi"><div class="label">Viajes <span>{{ agriState.kpiSemanaLabel }}</span></div><div class="value">{{ agriState.kpiTotal }}</div><div class="sub">{{ agriState.kpiTotalSub }}</div></div>
+    <div class="kpi"><div class="label">Cumple llegada</div><div class="value amber">{{ agriState.kpiLlegada }}</div><div class="sub">promedio ponderado</div></div>
+    <div class="kpi"><div class="label">Cumple tiempo en finca</div><div class="value red">{{ agriState.kpiTiempo }}</div><div class="sub">promedio ponderado</div></div>
+    <div class="kpi"><div class="label">Cumple llegada a planta</div><div class="value red">{{ agriState.kpiPlanta }}</div><div class="sub">promedio ponderado</div></div>
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <h3>Cumplimiento de llegada por agricultor <span>{{ agriState.chartLabel }}</span></h3>
+      <div class="chart-wrap"><canvas #chartAgri></canvas></div>
     </div>
-
-    <div class="dashboard-grid">
-      <div class="card bg-panel">
-        <h3>Distribución de cumplimiento</h3>
-        <div class="chart-container"><canvas #chartTiendasDonut></canvas></div>
-      </div>
-      <div class="card bg-panel">
-        <h3>Cumplimiento por CEDI de despacho</h3>
-        <table>
-          <thead><tr><th>CEDI</th><th>Registros</th><th>Participación</th></tr></thead>
-          <tbody>
-            <tr *ngFor="let c of tablaCedis">
-              <td class="text-light">{{ c.nombre }}</td><td>{{ c.registros }}</td><td>{{ c.part }}%</td>
-            </tr>
-          </tbody>
-        </table>
-        <h3 class="margin-top">Rutas con más registros (Junio)</h3>
-        <table>
-          <thead><tr><th>Ruta / Región</th><th>Registros</th><th>% Cumple</th></tr></thead>
-          <tbody>
-            <tr *ngFor="let r of tablaRutas">
-              <td class="teal">{{ r.nombre }}</td><td>{{ r.registros }}</td><td class="amber">{{ r.cumple }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+    <div class="card">
+      <h3>Detalle por agricultor — <span>{{ agriState.tableLabel }}</span></h3>
+      <table>
+        <thead><tr><th>Agricultor</th><th>Viajes</th><th>Llegada</th><th>Tiempo finca</th><th>Llegada planta</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let a of agriState.table">
+            <td class="name">{{ a.name }}</td><td>{{ a.total }}</td>
+            <td><span class="pill" [ngClass]="a.llegadaClass">{{ a.llegada }}</span></td>
+            <td><span class="pill" [ngClass]="a.tiempoClass">{{ a.tiempo }}</span></td>
+            <td><span class="pill" [ngClass]="a.plantaClass">{{ a.planta }}</span></td>
+          </tr>
+        </tbody>
+      </table>
     </div>
-  </section>
-
-  <section class="section-container no-border">
-    <div class="section-header">
-      <span class="badge">03</span>
-      <h2>Cumplimiento de Recogida — Agricultores</h2>
-      <span class="file-status" [ngClass]="{'loaded': archivoAgricultores !== 'Falta archivo', 'missing': archivoAgricultores === 'Falta archivo'}">
-        {{ archivoAgricultores }}
-      </span>
-    </div>
-
-    <div class="kpi-grid">
-      <div class="kpi-card"><div class="label">Viajes Semana 23</div><div class="value">{{ kpiAgri.viajes }}</div><div class="subtext">6 agricultores</div></div>
-      <div class="kpi-card"><div class="label">Cumple Llegada</div><div class="value amber">{{ kpiAgri.llegada }}%</div><div class="subtext">promedio ponderado</div></div>
-      <div class="kpi-card"><div class="label">Cumple Tiempo en Finca</div><div class="value red">{{ kpiAgri.finca }}%</div><div class="subtext">promedio ponderado</div></div>
-      <div class="kpi-card"><div class="label">Cumple Llegada a Planta</div><div class="value red">{{ kpiAgri.planta }}%</div><div class="subtext">promedio ponderado</div></div>
-    </div>
-
-    <div class="dashboard-grid">
-      <div class="card bg-panel">
-        <h3>Cumplimiento de llegada por agricultor (S23)</h3>
-        <div class="chart-container-lg"><canvas #chartAgriBar></canvas></div>
-      </div>
-      <div class="card bg-panel">
-        <h3>Detalle por agricultor — Semana 23</h3>
-        <table>
-          <thead>
-            <tr><th>Agricultor</th><th>Viajes</th><th>Llegada</th><th>Tiempo Finca</th><th>Llegada Planta</th></tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let a of tablaAgri">
-              <td class="text-light bold">{{ a.nombre }}</td>
-              <td>{{ a.viajes }}</td>
-              <td class="teal">{{ a.llegada }}</td>
-              <td class="teal">{{ a.finca }}</td>
-              <td class="red">{{ a.planta }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </section>
-</div>
+  </div>
+</section>
+<footer>
+</footer>
