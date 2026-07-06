@@ -55,7 +55,7 @@ header.top h1 {
 } 
 
 header.top p { 
-  color: var(--ink-dim); /* Corregido: Mayor brillo para que la descripción principal sea notable */ 
+  color: var(--ink-dim); 
   margin-top: 8px; 
   max-width: 640px; 
   font-size: 14.5px; 
@@ -66,8 +66,8 @@ header.top p {
   border-bottom: 1px solid var(--line); 
 } 
 
-.section:last-of-type {
-  border-bottom: none;
+.section:last-of-type { 
+  border-bottom: none; 
 } 
 
 .section-head { 
@@ -105,7 +105,7 @@ header.top p {
 
 .section-note { 
   font-size: 13px; 
-  color: #cbd5e1; /* Corregido: Texto aclarado para que resalte cómodamente sobre el fondo oscuro */ 
+  color: #cbd5e1; 
   margin-bottom: 24px; 
   max-width: 700px; 
 } 
@@ -176,8 +176,14 @@ header.top p {
   font-weight: 500; 
 } 
 
-.chart-wrap {position: relative;height: 340px;} 
-.chart-wrap.tall { height: 320px; } 
+.chart-wrap { 
+  position: relative; 
+  height: 340px; 
+} 
+
+.chart-wrap.tall { 
+  height: 320px; 
+} 
 
 table { 
   width: 100%; 
@@ -191,7 +197,7 @@ th {
   font-size: 10.5px; 
   letter-spacing: .06em; 
   text-transform: uppercase; 
-  color: var(--ink-dim); 
+  color: var(--ink-dim) !important; 
   padding: 8px 10px; 
   border-bottom: 1px solid var(--line); 
 } 
@@ -200,10 +206,17 @@ td {
   padding: 9px 10px; 
   border-bottom: 1px solid var(--line); 
   font-family: var(--font-mono); 
+  color: var(--ink) !important; /* Solucionado aquí */
 } 
 
-td.name { font-family: var(--font-body); font-weight: 500; } 
-tr:last-child td { border-bottom: none; } 
+td.name { 
+  font-family: var(--font-body); 
+  font-weight: 500; 
+} 
+
+tr:last-child td { 
+  border-bottom: none; 
+} 
 
 .pill { 
   display: inline-block; 
@@ -214,9 +227,20 @@ tr:last-child td { border-bottom: none; }
   font-weight: 600; 
 } 
 
-.pill.good { background: rgba(45, 212, 191, .14); color: var(--teal); } 
-.pill.mid { background: rgba(242, 169, 60, .16); color: var(--amber); } 
-.pill.bad { background: rgba(226, 86, 79, .16); color: var(--red); } 
+.pill.good { 
+  background: rgba(45, 212, 191, .14); 
+  color: var(--teal); 
+} 
+
+.pill.mid { 
+  background: rgba(242, 169, 60, .16); 
+  color: var(--amber); 
+} 
+
+.pill.bad { 
+  background: rgba(226, 86, 79, .16); 
+  color: var(--red); 
+} 
 
 .legend-dot { 
   display: inline-block; 
@@ -234,7 +258,9 @@ tr:last-child td { border-bottom: none; }
   margin-top: 6px; 
 } 
 
-.bar-mini > div { height: 100%; } 
+.bar-mini > div { 
+  height: 100%; 
+} 
 
 .upload-box { 
   margin-left: auto; 
@@ -244,7 +270,10 @@ tr:last-child td { border-bottom: none; }
   flex-wrap: wrap; 
 } 
 
-.upload-box .src { border-left: none; padding-left: 0; } 
+.upload-box .src { 
+  border-left: none; 
+  padding-left: 0; 
+} 
 
 .upload-btn { 
   font-family: var(--font-mono); 
@@ -261,8 +290,14 @@ tr:last-child td { border-bottom: none; }
   white-space: nowrap; 
 } 
 
-.upload-btn:hover { filter: brightness(1.08); } 
-.upload-btn.loading { background: var(--ink-dim); cursor: wait; } 
+.upload-btn:hover { 
+  filter: brightness(1.08); 
+} 
+
+.upload-btn.loading { 
+  background: var(--ink-dim); 
+  cursor: wait; 
+} 
 
 .upload-status { 
   font-family: var(--font-mono); 
@@ -278,12 +313,9 @@ footer {
   font-family: var(--font-mono); 
   font-size: 11px; 
   color: var(--ink-dim); 
-}
-th, 
-.kpi .label, 
-.kpi .sub, 
-.upload-status, 
-.section-head .src, 
-footer {
-    color: #cbd5e1 !important;
+} 
+
+/* Forzado extra para textos secundarios */
+.kpi .label, .kpi .sub, .upload-status, .section-head .src, footer { 
+  color: #cbd5e1 !important; 
 }
