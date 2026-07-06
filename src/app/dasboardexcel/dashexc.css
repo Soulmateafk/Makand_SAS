@@ -279,3 +279,11 @@ footer {
   font-size: 11px; 
   color: var(--ink-dim); 
 }
+th, 
+.kpi .label, 
+.kpi .sub, 
+.upload-status, 
+.section-head .src, 
+footer {
+    color: #cbd5e1 !important;
+}
