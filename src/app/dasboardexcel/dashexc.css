@@ -5,7 +5,7 @@
   --panel-2: #1d2530; 
   --line: #2a3340; 
   --ink: #e7eaee; 
-  --ink-dim: #8b96a5; 
+  --ink-dim: rgb(183, 194, 209); 
   --teal: #2dd4bf; 
   --amber: #f2a93c; 
   --red: #e2564f; 
@@ -55,7 +55,7 @@ header.top h1 {
 } 
 
 header.top p { 
-  color: #cbd5e1; /* Corregido: Mayor brillo para que la descripción principal sea notable */ 
+  color: var(--ink-dim); /* Corregido: Mayor brillo para que la descripción principal sea notable */ 
   margin-top: 8px; 
   max-width: 640px; 
   font-size: 14.5px; 
@@ -176,7 +176,7 @@ header.top p {
   font-weight: 500; 
 } 
 
-.chart-wrap { position: relative; height: 260px; } 
+.chart-wrap {position: relative;height: 340px;} 
 .chart-wrap.tall { height: 320px; } 
 
 table { 

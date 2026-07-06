@@ -95,10 +95,10 @@ export class DashexcComponent implements AfterViewInit {
   };
 
   constructor() {
-    Chart.defaults.color = '#8b96a5';
-    Chart.defaults.font.family = "'IBM Plex Mono', monospace";
-    Chart.defaults.font.size = 11;
-  }
+  Chart.defaults.color = '#e2e8f0'; 
+  Chart.defaults.font.family = "'IBM Plex Mono', monospace";
+  Chart.defaults.font.size = 11;
+}
 
   ngAfterViewInit(): void {
     this.makeDoughnut('chartTransp', this.chartTranspRef.nativeElement, ['MAKAND', 'ARSITRANS', 'POLAR'], [132, 78, 48], ['#2dd4bf', '#f2a93c', '#e2564f']);
@@ -154,24 +154,26 @@ export class DashexcComponent implements AfterViewInit {
 
   // ---------- CREADORES DE GRÁFICAS ----------
   makeDoughnut(id: string, canvasRef: any, labels: any, data: any, colors: any) {
-    if (this.charts[id]) this.charts[id].destroy();
-    this.charts[id] = new Chart(canvasRef, {
-      type: 'doughnut',
-      data: {
-        labels,
-        datasets: [{
-          data,
-          backgroundColor: colors,
-          borderColor: '#171e27',
-          borderWidth: 3
-        }]
+  if (this.charts[id]) this.charts[id].destroy();
+  this.charts[id] = new Chart(canvasRef, {
+    type: 'doughnut',
+    data: {
+      labels,
+      datasets: [{ data, backgroundColor: colors, borderColor: '#171e27', borderWidth: 3 }]
+    },
+    options: {
+      responsive: true,           
+      maintainAspectRatio: false,  
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { boxWidth: 12, padding: 20 }
+        }
       },
-      options: {
-        plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, padding: 16 } } },
-        cutout: '62%'
-      }
-    });
-  }
+      cutout: '60%' 
+    }
+  });
+}
 
   makeStackedBar(id: string, canvasRef: any, labels: any, datasets: any) {
     if (this.charts[id]) this.charts[id].destroy();
