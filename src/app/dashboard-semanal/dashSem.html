@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Logístico Semanal - Makand</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600&family=Oswald:wght@600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="roadline"></div>
+    
+    <header class="top">
+        <span class="eyebrow">Módulo Independiente</span>
+        <h1>Control de Efectividad Semanal</h1>
+        <p>Carga los reportes específicos en formato CSV para consolidar y visualizar el rendimiento por semanas del año en curso.</p>
+    </header>
+
+    <main class="section">
+        <div class="section-head">
+            <span class="section-num">01</span>
+            <h2>Carga de Datos</h2>
+        </div>
+
+        <div class="upload-grid">
+            <div class="upload-card">
+                <h3>1. On Time Tiendas</h3>
+                <p class="info-text">Subir el CSV de la pestaña "Detalle regiones"</p>
+                <input type="file" id="file-tiendas" accept=".csv">
+            </div>
+            
+            <div class="upload-card">
+                <h3>2. On Time Agricultores</h3>
+                <p class="info-text">Subir el CSV de la pestaña "TIEMPO AGRICULTORES"</p>
+                <input type="file" id="file-agricultores" accept=".csv">
+            </div>
+            
+            <div class="upload-card">
+                <h3>3. Viajeros y Terceros</h3>
+                <p class="info-text">Subir el CSV de la pestaña "DT VIAJEROS."</p>
+                <input type="file" id="file-viajeros" accept=".csv">
+            </div>
+        </div>
+
+        <div style="margin-top: 24px; text-align: right;">
+            <button id="btn-procesar" class="upload-btn">Procesar Datos Semanales</button>
+        </div>
+    </main>
+
+    <section class="section" id="resultados-section" style="display: none;">
+        <div class="section-head">
+            <span class="section-num">02</span>
+            <h2>Consolidado Operativo</h2>
+        </div>
+
+        <div class="card">
+            <h3>Matriz de Cumplimiento por Semana del Año</h3>
+            <div class="table-container">
+                <table id="tabla-semanal">
+                    <thead>
+                        <tr>
+                            <th>Semana</th>
+                            <th>Efectividad Tiendas</th>
+                            <th>Efectividad Agricultores</th>
+                            <th>Efectividad Viajeros</th>
+                            <th>Estado General</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-semanal">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <script src="app.js"></script>
+</body>
+</html>
