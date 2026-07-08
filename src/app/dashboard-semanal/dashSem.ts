@@ -256,4 +256,4 @@ export class DashSemanalComponent implements AfterViewInit {
       this.lineChart.update();
     }
   }
-}
+} export const dashSem = 'dashboardsemanal';
