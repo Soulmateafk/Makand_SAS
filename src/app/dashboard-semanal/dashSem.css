@@ -1,57 +1,352 @@
-/* Efectos de elevación suave en las tarjetas operativas */
-.card {
-  border: none !important;
-  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+/* ==========================================================================
+   VARIABLES DE DISEÑO & TEMAS (Paleta Logística Moderna)
+   ========================================================================== */
+:host {
+  --bg-main: #f8fafc;
+  --bg-card: #ffffff;
+  --border-color: #e2e8f0;
+  
+  /* Tintas de Texto */
+  --ink-main: #0f172a;
+  --ink-muted: #475569;
+  --ink-dim: #94a3b8;
+
+  /* Colores de Estado de Flota */
+  --brand-blue: #2563eb;
+  --state-teal: #0d9488;
+  --state-amber: #d97706;
+  --state-red: #dc2626;
+  --state-bg-teal: #f0fdfa;
+  --state-bg-amber: #fffbeb;
+  --state-bg-red: #fef2f2;
 }
 
-.card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1) !important;
+/* Base de tipografía y reset sutil para el componente */
+* {
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 
-/* Cajas de carga de archivos */
-.card-upload {
-  background-color: #ffffff;
-  border: 1px dashed #dee2e6 !important;
-  border-radius: 8px;
+:host {
+  display: block;
+  background-color: var(--bg-main);
+  color: var(--ink-main);
+  min-height: 100vh;
+  padding: 0 0 40px 0;
 }
 
-/* Gradientes corporativos estilizados para los KPIs */
-.card-kpi {
-  border-radius: 10px;
-}
-
-.bg-gradient-viajes {
-  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-}
-
-.bg-gradient-efectividad {
-  background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-}
-
-.bg-gradient-retrasos {
-  background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);
-}
-
-/* Contenedores para mantener estables las proporciones de Chart.js */
-.chart-container {
-  position: relative;
-  height: 300px;
+/* LINEA DE RUTA (Detalle visual superior estilo carretera) */
+.roadline {
+  height: 6px;
+  background: linear-gradient(90deg, var(--brand-blue) 0%, var(--state-teal) 50%, var(--state-amber) 100%);
   width: 100%;
 }
 
-/* Ajustes finos para la tabla analítica */
-.table th {
-  letter-spacing: 0.5px;
-  border-bottom: 2px solid #eaedf1;
+/* ==========================================================================
+   HEADER DE OPERACIONES
+   ========================================================================== */
+header.top {
+  padding: 40px 4%;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 32px;
 }
 
-.table tbody tr {
-  transition: background-color 0.15s ease;
+header.top .eyebrow {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--brand-blue);
+  background: #eff6ff;
+  padding: 4px 10px;
+  border-radius: 4px;
+  margin-bottom: 12px;
 }
 
-.badge {
+header.top h1 {
+  font-size: 2.2rem;
+  font-weight: 800;
+  margin: 0 0 8px 0;
+  letter-spacing: -0.02em;
+}
+
+header.top p {
+  color: var(--ink-muted);
+  margin: 0;
+  font-size: 1rem;
+  max-width: 700px;
+  line-height: 1.5;
+}
+
+/* ==========================================================================
+   SECCIONES PRINCIPALES
+   ========================================================================== */
+.section {
+  max-width: 92%;
+  margin: 0 auto 48px auto;
+  background: transparent;
+}
+
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  border-bottom: 2px solid var(--border-color);
+  padding-bottom: 12px;
+  margin-bottom: 6px;
+}
+
+.section-head h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+  flex-grow: 1;
+}
+
+.section-num {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--ink-dim);
+  background: var(--border-color);
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+.section-note {
   font-size: 0.85rem;
-  padding: 0.5em 0.75em;
+  color: var(--ink-muted);
+  margin: 0 0 20px 0;
+  font-style: italic;
+}
+
+/* ==========================================================================
+   CAJA DE CARGA DE ARCHIVOS (UPLOAD-BOX)
+   ========================================================================== */
+.upload-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg-card);
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+.upload-box .src {
+  font-size: 0.8rem;
+  color: var(--ink-muted);
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.upload-btn {
+  background: var(--ink-main);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.upload-btn:hover {
+  background: var(--ink-muted);
+}
+
+.upload-btn.loading {
+  opacity: 0.6;
+  pointer-events: none;
+  position: relative;
+  animation: pulseLoading 1.5s infinite;
+}
+
+.upload-status {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+/* Modificadores dinámicos para los estados de carga de Angular */
+.upload-status.exito { background: var(--state-bg-teal); color: var(--state-teal); }
+.upload-status.error { background: var(--state-bg-red); color: var(--state-red); }
+.upload-status.pendiente { background: #f1f5f9; color: var(--ink-muted); }
+
+/* ==========================================================================
+   FILA DE INDICADORES (KPI CARD ROW)
+   ========================================================================== */
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.kpi {
+  background: var(--bg-card);
+  border-radius: 10px;
+  padding: 20px;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.kpi .label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.kpi .value {
+  font-size: 1.8rem;
+  font-weight: 800;
+  margin: 10px 0 4px 0;
+  color: var(--ink-main);
+  line-height: 1.1;
+}
+
+.kpi .sub {
+  font-size: 0.75rem;
+  color: var(--ink-dim);
+}
+
+/* Modificadores de color para los valores destacados del KPI */
+.kpi .value.teal { color: var(--state-teal); }
+.kpi .value.amber { color: var(--state-amber); }
+.kpi .value.red { color: var(--state-red); }
+
+/* ==========================================================================
+   TARJETAS Y CONTENEDORES DE GRÁFICAS
+   ========================================================================== */
+.grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+@media(max-width: 500px) {
+  .grid-2 { grid-template-columns: 1fr; }
+}
+
+.card {
+  background: var(--bg-card);
+  border-radius: 12px;
+  padding: 24px;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.01), 0 2px 4px -1px rgba(0,0,0,0.01);
+}
+
+.card h3 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin: 0 0 20px 0;
+  color: var(--ink-main);
+  border-left: 4px solid var(--brand-blue);
+  padding-left: 10px;
+}
+
+.chart-wrap {
+  position: relative;
+  width: 100%;
+  height: 220px; /* Tamaño controlado para evitar desfases de Chart.js */
+}
+
+.chart-wrap.tall {
+  height: 280px;
+}
+
+/* ==========================================================================
+   TABLAS DE DATOS LOGÍSTICOS
+   ========================================================================== */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.9rem;
+}
+
+table thead tr {
+  background: #f1f5f9;
+  border-bottom: 2px solid var(--border-color);
+}
+
+table th {
+  padding: 12px 14px;
+  font-weight: 600;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+}
+
+table tbody tr {
+  border-bottom: 1px solid var(--border-color);
+  transition: background 0.15s ease;
+}
+
+table tbody tr:hover {
+  background: #f8fafc;
+}
+
+table td {
+  padding: 12px 14px;
+  color: var(--ink-main);
+  vertical-align: middle;
+}
+
+table td.name {
+  font-weight: 600;
+  color: var(--ink-main);
+}
+
+/* BADGES / PILLS DE RENDIMIENTO */
+.pill {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+  text-align: center;
+}
+
+/* Clases de utilidad para inyectar mediante [ngClass] en las filas */
+.pill.cumple, .pill.teal-kpi { background: var(--state-bg-teal); color: var(--state-teal); }
+.pill.parcial, .pill.amber-kpi { background: var(--state-bg-amber); color: var(--state-amber); }
+.pill.nocumple, .pill.red-kpi { background: var(--state-bg-red); color: var(--state-red); }
+
+/* ==========================================================================
+   FOOTER
+   ========================================================================== */
+footer {
+  text-align: center;
+  padding: 40px 0 10px 0;
+  margin-top: 40px;
+  border-top: 1px solid var(--border-color);
+}
+
+footer p {
+  font-size: 0.8rem;
+  color: var(--ink-dim);
+  margin: 0;
+}
+
+/* ANIMACIONES */
+@keyframes pulseLoading {
+  0% { opacity: 0.6; }
+  50% { opacity: 0.3; }
+  100% { opacity: 0.6; }
 }
