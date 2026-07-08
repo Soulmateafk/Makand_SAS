@@ -1,118 +1,214 @@
-<div class="container-fluid p-4 bg-light min-vh-100">
-  <div class="row mb-4">
-    <div class="col-12 d-flex justify-content-between align-items-center bg-white p-3 rounded shadow-sm">
-      <div>
-        <h2 class="fw-bold text-dark m-0">Dashboard de Control Semanal</h2>
-        <small class="text-muted" *ngIf="semanaDetectada">Mostrando datos reales optimizados para la Semana: <strong>{{ semanaDetectada }}</strong></small>
-        <small class="text-muted" *ngIf="!semanaDetectada">Por favor, carga los archivos Excel operativos para consolidar la semana.</small>
-      </div>
-      <span class="badge bg-primary px-3 py-2 fs-6 rounded-pill" *ngIf="semanaDetectada">Estado: Actualizado</span>
+<div class="roadline"></div>
+
+<header class="top">
+  <span class="eyebrow">Logística & Distribución</span>
+  <h1>Dashboard de Operaciones Semanales</h1>
+  <p>Consolidado e indicadores clave de rendimiento (KPI) basados en las plantillas y reportes de la flota de transporte.</p>
+</header>
+
+<section class="section">
+  <div class="section-head">
+    <div class="section-num">01</div>
+    <h2>Planta Makand</h2>
+    
+    <div class="upload-box">
+      <span class="src">{{ makandState.src }}</span>
+      <label class="upload-btn" [class.loading]="makandState.status === 'CARGANDO'">
+        Seleccionar Archivo
+        <input type="file" (change)="handleUpload($event, 'makand')" accept=".xlsx, .xls, .csv" style="display: none;">
+      </label>
+      <span class="upload-status" [ngClass]="makandState.statusClass">{{ makandState.status }}</span>
     </div>
   </div>
 
-  <div class="row mb-4">
-    <div class="col-md-4 mb-3 mb-md-0">
-      <div class="card card-upload p-3 text-center h-100">
-        <label class="fw-bold text-secondary mb-2 small d-block">1. TIENDAS (ON TIME EN TIENDAS)</label>
-        <input type="file" class="form-control form-control-sm" (change)="cargarTiendas($event)" accept=".xlsx, .xls">
-        <div *ngIf="archivosCargados.tiendas" class="text-success small mt-1 fw-semibold">✓ Archivo procesado con éxito</div>
-      </div>
+  <p class="section-note">{{ makandState.note }}</p>
+
+  <div class="kpi-row">
+    <div class="kpi">
+      <div class="label">Total Viajes</div>
+      <div class="value teal">{{ makandState.kpiTotal }}</div>
+      <div class="sub">{{ makandState.kpiPeriodo }}</div>
     </div>
-    <div class="col-md-4 mb-3 mb-md-0">
-      <div class="card card-upload p-3 text-center h-100">
-        <label class="fw-bold text-secondary mb-2 small d-block">2. AGRICULTORES (ON TIME AGRICULTORES)</label>
-        <input type="file" class="form-control form-control-sm" (change)="cargarAgricultores($event)" accept=".xlsx, .xls">
-        <div *ngIf="archivosCargados.agricultores" class="text-success small mt-1 fw-semibold">✓ Archivo procesado con éxito</div>
-      </div>
+    <div class="kpi">
+      <div class="label">Cumplimiento Llegada</div>
+      <div class="value amber">{{ makandState.kpiCumple }}</div>
+      <div class="sub">Vehículos a tiempo</div>
     </div>
-    <div class="col-md-4">
-      <div class="card card-upload p-3 text-center h-100">
-        <label class="fw-bold text-secondary mb-2 small d-block">3. VIAJEROS / TERCEROS</label>
-        <input type="file" class="form-control form-control-sm" (change)="cargarViajeros($event)" accept=".xlsx, .xls">
-        <div *ngIf="archivosCargados.viajeros" class="text-success small mt-1 fw-semibold">✓ Archivo procesado con éxito</div>
-      </div>
+    <div class="kpi">
+      <div class="label">Cajas Despachadas</div>
+      <div class="value">{{ makandState.kpiCajas }}</div>
+      <div class="sub">{{ makandState.kpiCajasSub }}</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Transportadora Líder</div>
+      <div class="value teal">{{ makandState.kpiLider }}</div>
+      <div class="sub">{{ makandState.kpiLiderSub }}</div>
     </div>
   </div>
 
-  <div class="row mb-4">
-    <div class="col-md-4 mb-3 mb-md-0">
-      <div class="card card-kpi p-4 text-white rounded bg-gradient-viajes">
-        <h6 class="text-uppercase opacity-75 fw-bold m-0">Total Viajes Consolidados</h6>
-        <h2 class="display-5 fw-bold my-2">{{ kpis.totalViajes }}</h2>
-        <p class="mb-0 small opacity-75">Viajes programados en la semana actual</p>
+  <div class="grid-2">
+    <div class="card">
+      <h3>Distribución por Transportadora</h3>
+      <div class="chart-wrap">
+        <canvas #chartTransp></canvas>
       </div>
     </div>
-    <div class="col-md-4 mb-3 mb-md-0">
-      <div class="card card-kpi p-4 text-white rounded bg-gradient-efectividad">
-        <h6 class="text-uppercase opacity-75 fw-bold m-0">Efectividad General Promedio</h6>
-        <h2 class="display-5 fw-bold my-2">{{ kpis.efectividadGeneral | number:'1.1-1' }}%</h2>
-        <div class="progress bg-white bg-opacity-25" style="height: 6px;">
-          <div class="progress-bar bg-white" [style.width.%]="kpis.efectividadGeneral"></div>
-        </div>
+    <div class="card">
+      <h3>Despachos por Almacén</h3>
+      <div class="chart-wrap">
+        <canvas #chartAlmacen></canvas>
       </div>
     </div>
-    <div class="col-md-4">
-      <div class="card card-kpi p-4 text-white rounded bg-gradient-retrasos">
-        <h6 class="text-uppercase opacity-75 fw-bold m-0">Retrasos Detectados (No Cumple)</h6>
-        <h2 class="display-5 fw-bold my-2">{{ kpis.totalRetrasos }}</h2>
-        <p class="mb-0 small opacity-75">Puntos críticos evaluados fuera de ventana</p>
-      </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-head">
+    <div class="section-num">02</div>
+    <h2>On Time Tiendas</h2>
+    
+    <div class="upload-box">
+      <span class="src">{{ tiendasState.src }}</span>
+      <label class="upload-btn" [class.loading]="tiendasState.status === 'CARGANDO'">
+        Seleccionar Archivo
+        <input type="file" (change)="handleUpload($event, 'tiendas')" accept=".xlsx, .xls, .csv" style="display: none;">
+      </label>
+      <span class="upload-status" [ngClass]="tiendasState.statusClass">{{ tiendasState.status }}</span>
     </div>
   </div>
 
-  <div class="row mb-4">
-    <div class="col-md-7 mb-4 mb-md-0">
-      <div class="card border-0 shadow-sm p-4 bg-white h-100">
-        <h5 class="fw-bold text-dark mb-3">Tendencia Diaria de Cumplimiento (%)</h5>
-        <div class="chart-container">
-          <canvas #lineChart></canvas>
-        </div>
-      </div>
+  <p class="section-note">{{ tiendasState.note }}</p>
+
+  <div class="kpi-row">
+    <div class="kpi">
+      <div class="label">Puntos de Entrega</div>
+      <div class="value">{{ tiendasState.kpiTotal }}</div>
+      <div class="sub">Registros analizados</div>
     </div>
-    <div class="col-md-5">
-      <div class="card border-0 shadow-sm p-4 bg-white h-100">
-        <h5 class="fw-bold text-dark mb-3">Efectividad por Frente Operativo</h5>
-        <div class="chart-container">
-          <canvas #barChart></canvas>
-        </div>
-      </div>
+    <div class="kpi">
+      <div class="label">Cumple Óptimo</div>
+      <div class="value teal">{{ tiendasState.kpiCumple }}</div>
+      <div class="sub">{{ tiendasState.kpiCumpleSub }}</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Cumple Parcial</div>
+      <div class="value amber">{{ tiendasState.kpiParcial }}</div>
+      <div class="sub">{{ tiendasState.kpiParcialSub }}</div>
+    </div>
+    <div class="kpi">
+      <div class="label">No Cumple</div>
+      <div class="value red">{{ tiendasState.kpiNoCumple }}</div>
+      <div class="sub">{{ tiendasState.kpiNoCumpleSub }}</div>
     </div>
   </div>
 
-  <div class="row">
-    <div class="col-12">
-      <div class="card border-0 shadow-sm p-4 bg-white">
-        <h5 class="fw-bold text-dark mb-3">Desglose de Desempeño Operativo Semanal</h5>
-        <div class="table-responsive">
-          <table class="table table-hover align-middle m-0">
-            <thead class="table-light text-secondary text-uppercase font-monospace small">
-              <tr>
-                <th>Frente de Operación</th>
-                <th class="text-center">Total Viajes</th>
-                <th class="text-center">Viajes Cumplidos</th>
-                <th class="text-center">Viajes No Cumple</th>
-                <th class="text-end">Porcentaje Efectividad</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let item of tablaResumen">
-                <td class="fw-bold text-secondary">{{ item.frente }}</td>
-                <td class="text-center">{{ item.total }}</td>
-                <td class="text-center text-success fw-semibold">{{ item.total - item.noCumple }}</td>
-                <td class="text-center text-danger fw-semibold">{{ item.noCumple }}</td>
-                <td class="text-end">
-                  <span class="badge" [ngClass]="item.efectividad >= 85 ? 'bg-success' : item.efectividad >= 70 ? 'bg-warning text-dark' : 'bg-danger'">
-                    {{ item.efectividad | number:'1.1-1' }}%
-                  </span>
-                </td>
-              </tr>
-              <tr *ngIf="tablaResumen.length === 0">
-                <td colspan="5" class="text-center text-muted py-4">No hay datos procesados para mostrar. Sube los archivos arriba.</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+  <div class="grid-2">
+    <div class="card">
+      <h3>Métricas Horarias de Retail</h3>
+      <div class="chart-wrap tall">
+        <canvas #chartTiendas></canvas>
       </div>
     </div>
+    <div class="card">
+      <h3>Top 5 Rutas de Entrega</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Ruta / Región</th>
+            <th>Viajes</th>
+            <th>On-Time</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let ruta of tiendasState.tableRutas">
+            <td class="name">{{ ruta.name }}</td>
+            <td>{{ ruta.total }}</td>
+            <td><span class="pill" [ngClass]="ruta.pctClass">{{ ruta.pct }}</span></td>
+          </tr>
+          <tr *ngIf="tiendasState.tableRutas.length === 0">
+            <td colspan="3" style="text-align: center; color: var(--ink-dim);">Esperando carga de datos...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
-</div>
+</section>
+
+<section class="section">
+  <div class="section-head">
+    <div class="section-num">03</div>
+    <h2>On Time Agricultores</h2>
+    
+    <div class="upload-box">
+      <span class="src">{{ agriState.src }}</span>
+      <label class="upload-btn" [class.loading]="agriState.status === 'CARGANDO'">
+        Seleccionar Archivo
+        <input type="file" (change)="handleUpload($event, 'agri')" accept=".xlsx, .xls, .csv" style="display: none;">
+      </label>
+      <span class="upload-status" [ngClass]="agriState.statusClass">{{ agriState.status }}</span>
+    </div>
+  </div>
+
+  <p class="section-note">{{ agriState.note }}</p>
+
+  <div class="kpi-row">
+    <div class="kpi">
+      <div class="label">Frentes Evaluados</div>
+      <div class="value">{{ agriState.kpiTotal }}</div>
+      <div class="sub">{{ agriState.kpiTotalSub }}</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Arribo a Finca</div>
+      <div class="value teal">{{ agriState.kpiLlegada }}</div>
+      <div class="sub">Cumplimiento ingreso</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Tiempo en Finca</div>
+      <div class="value amber">{{ agriState.kpiTiempo }}</div>
+      <div class="sub">Cumplimiento cargue</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Retorno Planta</div>
+      <div class="value">{{ agriState.kpiPlanta }}</div>
+      <div class="sub">Cumplimiento destino</div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom: 22px;">
+    <h3>Evolución de Arribo por Proveedor</h3>
+    <div class="chart-wrap" style="height: 260px;">
+      <canvas #chartAgri></canvas>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Monitoreo Detallado Campo</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Proveedor / Finca</th>
+          <th>Viajes</th>
+          <th>Llegada Finca</th>
+          <th>Tiempo Cargue</th>
+          <th>Retorno Planta</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let row of agriState.table">
+          <td class="name">{{ row.name }}</td>
+          <td>{{ row.total }}</td>
+          <td><span class="pill" [ngClass]="row.llegadaClass">{{ row.llegada }}</span></td>
+          <td><span class="pill" [ngClass]="row.tiempoClass">{{ row.tiempo }}</span></td>
+          <td><span class="pill" [ngClass]="row.plantaClass">{{ row.planta }}</span></td>
+        </tr>
+        <tr *ngIf="agriState.table.length === 0">
+          <td colspan="5" style="text-align: center; color: var(--ink-dim);">Esperando carga de datos...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<footer>
+  <p>Sistema de Monitoreo de Flotas v2.0 • Diseñado para visualización de métricas críticas</p>
+</footer>
