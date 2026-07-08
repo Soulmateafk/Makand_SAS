@@ -208,7 +208,7 @@ export class DashSemanalComponent implements AfterViewInit {
     this.makandState.kpiTotal = totalViajes;
     this.makandState.kpiPeriodo = `Periodo operativo: ${mesDetectado}`;
     this.makandState.kpiCumple = totalViajes > 0 ? `${Math.round((viajesCumpleLlegada / totalViajes) * 100)}%` : '0%';
-    this.makandState.kpiCajas = totalCajas.toLocaleString('de-DE');
+    this.makandState.kpiCajas = totalCajas.toLocaleString('de-DE') as any;
     this.makandState.kpiCajasSub = 'unidades distribuidas';
 
     // Generar la tabla de transportadoras para el HTML
