@@ -200,9 +200,36 @@ export class DashSemanalComponent implements AfterViewInit {
    * PROCESAMIENTO REPORTE 02: HORARIOS EN TIENDAS (D1, ARA, EXITO)
    */
   private procesarReporteTiendas(rows: any[]) {
-  // 1. Asegurar que los datos llegan (debug básico)
+  // 1. Asegurar que los datos llegan del Excel
   if (!rows || rows.length === 0) return;
 
+  // 2. NORMALIZACIÓN Y FILTRADO PREVIO (El verdadero fix para los archivos sucios)
+  // Aquí limpiamos los espacios de las cabeceras y descartamos las filas que no son datos reales.
+  const datosLimpios = rows.reduce((acc, row) => {
+    // Quitamos espacios en blanco al inicio o final de los nombres de las columnas
+    const cleanRow = Object.keys(row).reduce((cleanAcc, key) => {
+      cleanAcc[key.trim()] = row[key];
+      return cleanAcc;
+    }, {} as any);
+
+    // Buscamos la columna clave que define si es una fila de datos real
+    const region = cleanRow['Región'] || cleanRow['Region'] || cleanRow['RUTA'];
+    
+    // Si la fila tiene una región válida, la guardamos. Si está vacía (basura/títulos), se ignora.
+    if (region) {
+      cleanRow['_regionNormalizada'] = region; // Guardamos la región ya extraída
+      acc.push(cleanRow);
+    }
+    return acc;
+  }, [] as any[]);
+
+  // Verificación de seguridad: Si después de limpiar no quedó nada, detenemos el proceso.
+  if (datosLimpios.length === 0) {
+    console.warn("No se encontraron datos válidos. Por favor, asegúrate de subir 'Detalle regiones.csv'.");
+    return;
+  }
+
+  // 3. Inicialización del Estado
   this.tiendasState.status = 'Cargado';
   this.tiendasState.statusClass = 'text-success fw-bold';
   this.tiendasState.note = 'Análisis de ventanas de descarga con base en el tiempo en región capturado.';
@@ -215,19 +242,11 @@ export class DashSemanalComponent implements AfterViewInit {
   const rutasMap: Record<string, { total: number; cumple: number }> = {};
   let semanaNum = '';
 
-  rows.forEach((row, index) => {
-    // Normalización: quitamos espacios en blanco de las llaves del objeto (si existen)
-    const cleanRow = Object.keys(row).reduce((acc, key) => {
-      acc[key.trim()] = row[key];
-      return acc;
-    }, {} as any);
-
-    const region = cleanRow['Región'] || cleanRow['Region'] || cleanRow['RUTA'] || cleanRow['RUTA '];
-    
-    // Si la región es vacía, saltamos la fila (puede ser una fila de encabezado o vacía)
-    if (!region) return; 
-
+  // 4. Procesamiento de la Data Limpia
+  datosLimpios.forEach(cleanRow => {
     totalRegistros++;
+    const region = cleanRow['_regionNormalizada'];
+    
     if (cleanRow['SEMANA']) semanaNum = `Semana ${cleanRow['SEMANA']}`;
 
     const cumplimiento = String(cleanRow['CUMPLIMIENTO'] || '').toUpperCase().trim();
@@ -249,7 +268,7 @@ export class DashSemanalComponent implements AfterViewInit {
     if (!cumplimiento.includes('NO CUMPLE')) rutasMap[region].cumple++;
   });
 
-  // 2. Asignación segura de KPIs
+  // 5. Asignación segura de KPIs
   this.tiendasState.kpiTotal = totalRegistros;
   this.tiendasState.kpiPeriodo = semanaNum || 'Mes operativo';
   this.tiendasState.kpiCumple = cumple.toString();
@@ -257,6 +276,7 @@ export class DashSemanalComponent implements AfterViewInit {
   this.tiendasState.kpiNoCumple = noCumple.toString();
   
   if (totalRegistros > 0) {
+    // Aplicación del modelo lógico sustractivo para efectividad real (100% - penalidad)
     const porcentajeFallas = (noCumple / totalRegistros) * 100;
     const porcentajeEfectividad = (100 - porcentajeFallas).toFixed(1);
     
@@ -267,7 +287,7 @@ export class DashSemanalComponent implements AfterViewInit {
     this.tiendasState.kpiNoCumpleSub = '0% de fallas';
   }
 
-  // 3. Generación de tablas
+  // 6. Generación de tablas dinámicas
   this.tiendasState.tableCedi = Object.keys(cedis).map(name => ({
     name,
     total: cedis[name],
@@ -289,14 +309,13 @@ export class DashSemanalComponent implements AfterViewInit {
     .sort((a, b) => b.total - a.total)
     .slice(0, 5);
 
-  // 4. Actualización de Gráficos y UI
+  // 7. Actualización de Gráficos
   if (this.chartTiendas) {
     this.chartTiendas.data.datasets[0].data = [cumple - parcial, parcial, noCumple];
     this.chartTiendas.update();
   }
 
-  // ¡CRÍTICO!: Forzar a Angular a detectar estos cambios en el estado
-  // Asegúrate de haber inyectado 'private cdr: ChangeDetectorRef' en el constructor
+  // ¡CRÍTICO!: Notificamos a Angular del nuevo estado
   this.cdr.detectChanges();
 }
 
