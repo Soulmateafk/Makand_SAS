@@ -200,88 +200,105 @@ export class DashSemanalComponent implements AfterViewInit {
    * PROCESAMIENTO REPORTE 02: HORARIOS EN TIENDAS (D1, ARA, EXITO)
    */
   private procesarReporteTiendas(rows: any[]) {
-    this.tiendasState.status = 'Cargado';
-    this.tiendasState.statusClass = 'text-success fw-bold';
-    this.tiendasState.note = 'Análisis de ventanas de descarga con base en el tiempo en región capturado.';
+  // 1. Asegurar que los datos llegan (debug básico)
+  if (!rows || rows.length === 0) return;
 
-    let totalRegistros = 0;
-    let cumple = 0;
-    let parcial = 0;
-    let noCumple = 0;
-    const cedis: Record<string, number> = {};
-    const rutasMap: Record<string, { total: number; cumple: number }> = {};
-    let semanaNum = '';
+  this.tiendasState.status = 'Cargado';
+  this.tiendasState.statusClass = 'text-success fw-bold';
+  this.tiendasState.note = 'Análisis de ventanas de descarga con base en el tiempo en región capturado.';
 
-    rows.forEach(row => {
-      // Cobertura ampliada para posibles nombres de cabecera en el Excel (espacios, sin tildes, etc.)
-      const region = row['Región'] || row['Region'] || row['RUTA '] || row['RUTA'];
-      if (!region) return; 
+  let totalRegistros = 0;
+  let cumple = 0;
+  let parcial = 0;
+  let noCumple = 0;
+  const cedis: Record<string, number> = {};
+  const rutasMap: Record<string, { total: number; cumple: number }> = {};
+  let semanaNum = '';
 
-      totalRegistros++;
-      if (row['SEMANA']) semanaNum = `Semana ${row['SEMANA']}`;
+  rows.forEach((row, index) => {
+    // Normalización: quitamos espacios en blanco de las llaves del objeto (si existen)
+    const cleanRow = Object.keys(row).reduce((acc, key) => {
+      acc[key.trim()] = row[key];
+      return acc;
+    }, {} as any);
 
-      const cumplimiento = String(row['CUMPLIMIENTO'] || row['Cumplimiento'] || '').toUpperCase();
-      
-      if (cumplimiento.includes('NO CUMPLE')) {
-        noCumple++;
-      } else if (cumplimiento.includes('PARCIAL')) {
-        parcial++;
-        cumple++; 
-      } else {
-        cumple++;
-      }
-
-      const cedi = row['CEDI'] || 'Por clasificar';
-      cedis[cedi] = (cedis[cedi] || 0) + 1;
-
-      if (!rutasMap[region]) rutasMap[region] = { total: 0, cumple: 0 };
-      rutasMap[region].total++;
-      if (!cumplimiento.includes('NO CUMPLE')) rutasMap[region].cumple++;
-    });
-
-    this.tiendasState.kpiTotal = totalRegistros;
-    this.tiendasState.kpiPeriodo = semanaNum || 'Mes operativo';
+    const region = cleanRow['Región'] || cleanRow['Region'] || cleanRow['RUTA'] || cleanRow['RUTA '];
     
-    // Asignación de contadores base
-    this.tiendasState.kpiCumple = cumple.toString();
-    this.tiendasState.kpiParcial = parcial.toString();
-    this.tiendasState.kpiNoCumple = noCumple.toString();
+    // Si la región es vacía, saltamos la fila (puede ser una fila de encabezado o vacía)
+    if (!region) return; 
+
+    totalRegistros++;
+    if (cleanRow['SEMANA']) semanaNum = `Semana ${cleanRow['SEMANA']}`;
+
+    const cumplimiento = String(cleanRow['CUMPLIMIENTO'] || '').toUpperCase().trim();
     
-    if (totalRegistros > 0) {
-      // Aplicación del modelo lógico sustractivo para efectividad real (100% - penalidad)
-      const porcentajeFallas = (noCumple / totalRegistros) * 100;
-      const porcentajeEfectividad = (100 - porcentajeFallas).toFixed(1);
-      
-      this.tiendasState.kpiCumpleSub = `${porcentajeEfectividad}% de efectividad`;
-      this.tiendasState.kpiNoCumpleSub = `${porcentajeFallas.toFixed(1)}% de fallas`;
+    if (cumplimiento.includes('NO CUMPLE')) {
+      noCumple++;
+    } else if (cumplimiento.includes('PARCIAL')) {
+      parcial++;
+      cumple++; 
+    } else {
+      cumple++;
     }
 
-    this.tiendasState.tableCedi = Object.keys(cedis).map(name => ({
-      name,
-      total: cedis[name],
-      pct: `${((cedis[name] / totalRegistros) * 100).toFixed(1)}%`
-    }));
+    const cedi = cleanRow['CEDI'] || 'Por clasificar';
+    cedis[cedi] = (cedis[cedi] || 0) + 1;
 
-    this.tiendasState.rutasMesLabel = semanaNum;
-    this.tiendasState.tableRutas = Object.keys(rutasMap)
-      .map(name => {
-        const r = rutasMap[name];
-        const pctCumple = Math.round((r.cumple / r.total) * 100);
-        return {
-          name,
-          total: r.total,
-          pct: `${pctCumple}%`,
-          pctClass: pctCumple >= 85 ? 'pill-success' : pctCumple >= 70 ? 'pill-warning' : 'pill-danger'
-        };
-      })
-      .sort((a, b) => b.total - a.total)
-      .slice(0, 5);
+    if (!rutasMap[region]) rutasMap[region] = { total: 0, cumple: 0 };
+    rutasMap[region].total++;
+    if (!cumplimiento.includes('NO CUMPLE')) rutasMap[region].cumple++;
+  });
 
-    if (this.chartTiendas) {
-      this.chartTiendas.data.datasets[0].data = [cumple - parcial, parcial, noCumple];
-      this.chartTiendas.update();
-    }
+  // 2. Asignación segura de KPIs
+  this.tiendasState.kpiTotal = totalRegistros;
+  this.tiendasState.kpiPeriodo = semanaNum || 'Mes operativo';
+  this.tiendasState.kpiCumple = cumple.toString();
+  this.tiendasState.kpiParcial = parcial.toString();
+  this.tiendasState.kpiNoCumple = noCumple.toString();
+  
+  if (totalRegistros > 0) {
+    const porcentajeFallas = (noCumple / totalRegistros) * 100;
+    const porcentajeEfectividad = (100 - porcentajeFallas).toFixed(1);
+    
+    this.tiendasState.kpiCumpleSub = `${porcentajeEfectividad}% de efectividad`;
+    this.tiendasState.kpiNoCumpleSub = `${porcentajeFallas.toFixed(1)}% de fallas`;
+  } else {
+    this.tiendasState.kpiCumpleSub = '0% de efectividad';
+    this.tiendasState.kpiNoCumpleSub = '0% de fallas';
   }
+
+  // 3. Generación de tablas
+  this.tiendasState.tableCedi = Object.keys(cedis).map(name => ({
+    name,
+    total: cedis[name],
+    pct: totalRegistros > 0 ? `${((cedis[name] / totalRegistros) * 100).toFixed(1)}%` : '0%'
+  }));
+
+  this.tiendasState.rutasMesLabel = semanaNum;
+  this.tiendasState.tableRutas = Object.keys(rutasMap)
+    .map(name => {
+      const r = rutasMap[name];
+      const pctCumple = r.total > 0 ? Math.round((r.cumple / r.total) * 100) : 0;
+      return {
+        name,
+        total: r.total,
+        pct: `${pctCumple}%`,
+        pctClass: pctCumple >= 85 ? 'pill-success' : pctCumple >= 70 ? 'pill-warning' : 'pill-danger'
+      };
+    })
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 5);
+
+  // 4. Actualización de Gráficos y UI
+  if (this.chartTiendas) {
+    this.chartTiendas.data.datasets[0].data = [cumple - parcial, parcial, noCumple];
+    this.chartTiendas.update();
+  }
+
+  // ¡CRÍTICO!: Forzar a Angular a detectar estos cambios en el estado
+  // Asegúrate de haber inyectado 'private cdr: ChangeDetectorRef' en el constructor
+  this.cdr.detectChanges();
+}
 
   /**
    * PROCESAMIENTO REPORTE 03: RECOLECCIÓN AGRICULTORES (CAMPO Y TRANSPORTE)
