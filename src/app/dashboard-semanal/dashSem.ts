@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import * as XLSX from 'xlsx';
 import Chart from 'chart.js/auto';
 
-// Interfaces internas para mantener el tipado estricto en las tablas
+// Interfaces internas para mantener el tipado estricto
 interface MakandTableRow {
   name: string;
   total: number;
@@ -47,22 +47,19 @@ interface AgriTableRow {
   styleUrl: './dashSem.css'
 })
 export class DashSemanalComponent implements AfterViewInit {
-  // Referencias nativas a los canvas del HTML
   @ViewChild('chartTransp') chartTranspRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('chartAlmacen') chartAlmacenRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('chartTiendas') chartTiendasRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('chartAgri') chartAgriRef!: ElementRef<HTMLCanvasElement>;
 
-  // Instancias de Chart.js para su control de refresco
   private chartTransp?: Chart;
   private chartAlmacen?: Chart;
   private chartTiendas?: Chart;
   private chartAgri?: Chart;
 
-  // Inyectamos ChangeDetectorRef para forzar el refresco de la vista al cargar archivos
   constructor(private cdr: ChangeDetectorRef) {}
 
-  // --- Módulos de Estado vinculados directamente con tu Plantilla HTML ---
+  // --- MÓDULOS DE ESTADO ---
   makandState = {
     src: 'Ningún archivo seleccionado',
     status: 'Pendiente de carga',
@@ -104,9 +101,9 @@ export class DashSemanalComponent implements AfterViewInit {
     kpiSemanaLabel: '',
     kpiTotal: 0,
     kpiTotalSub: 'Viajes en la semana',
-    kpiLlegada: '0%',
-    kpiTiempo: '0%',
-    kpiPlanta: '0%',
+    kpiLlegada: 0 as number | string, 
+    kpiTiempo: 0 as number | string,
+    kpiPlanta: 0 as number | string,
     chartLabel: '',
     tableLabel: 'Pendiente',
     table: [] as AgriTableRow[]
@@ -116,9 +113,6 @@ export class DashSemanalComponent implements AfterViewInit {
     this.inicializarGraficosVacios();
   }
 
-  /**
-   * Gestor de eventos unificado para la carga de los tres archivos Excel
-   */
   handleUpload(event: Event, tipo: 'makand' | 'tiendas' | 'agri') {
     const input = event.target as HTMLInputElement;
     if (!input.files || input.files.length === 0) return;
@@ -137,11 +131,23 @@ export class DashSemanalComponent implements AfterViewInit {
       const data = new Uint8Array(target.result as ArrayBuffer);
       const workbook = XLSX.read(data, { type: 'array' });
 
-      // Buscador dinámico de pestañas operativas comunes en tus archivos
-      const sheetName = workbook.SheetNames.find(name => {
-        const n = name.toLowerCase();
-        return n.includes('dt') || n.includes('detalle') || n.includes('tiempo') || n === 'hoja1';
-      }) || workbook.SheetNames[0];
+      // Lógica ESTRICTA de búsqueda de pestañas para evitar cargar hojas vacías
+      let sheetName = workbook.SheetNames[0]; 
+      
+      if (tipo === 'makand') {
+        sheetName = workbook.SheetNames.find(n => 
+          n.toLowerCase().includes('tercero') || n.toLowerCase().includes('viajero')
+        ) || workbook.SheetNames[0];
+      } else if (tipo === 'tiendas') {
+        sheetName = workbook.SheetNames.find(n => 
+          n.toLowerCase().includes('dt') || n.toLowerCase().includes('detalle') || n.toLowerCase().includes('tiendas')
+        ) || workbook.SheetNames[0];
+      } else if (tipo === 'agri') {
+        sheetName = workbook.SheetNames.find(n => 
+          (n.toLowerCase().includes('agri') || n.toLowerCase().includes('finca') || n.toLowerCase().includes('campo')) && 
+          !n.toLowerCase().includes('canastilla')
+        ) || workbook.SheetNames[0];
+      }
 
       const worksheet = workbook.Sheets[sheetName];
       const jsonRows = XLSX.utils.sheet_to_json<any>(worksheet, { defval: '' });
@@ -151,7 +157,6 @@ export class DashSemanalComponent implements AfterViewInit {
         if (tipo === 'tiendas') this.procesarReporteTiendas(jsonRows);
         if (tipo === 'agri') this.procesarReporteAgricultores(jsonRows);
 
-        // VITAL: Notificar a Angular que el estado ha cambiado para que refleje los datos instantáneamente
         this.cdr.detectChanges();
       }
     };
@@ -160,9 +165,24 @@ export class DashSemanalComponent implements AfterViewInit {
   }
 
   /**
-   * PROCESAMIENTO REPORTE 01: VIAJEROS Y TERCEROS (PLANTA MAKAND)
+   * PROCESAMIENTO 01: MAKAND
    */
   private procesarReporteMakand(rows: any[]) {
+    // Normalización de cabeceras
+    const datosLimpios = rows.reduce((acc: any[], row: any) => {
+      const cleanRow: any = {};
+      Object.keys(row).forEach(key => { if (key) cleanRow[key.trim().toUpperCase()] = row[key]; });
+      
+      const transp = cleanRow['TRANSPORTE'] || cleanRow['TRANSPORTADORA'];
+      if (transp) {
+        cleanRow['_transpNormalizado'] = transp;
+        acc.push(cleanRow);
+      }
+      return acc;
+    }, []);
+
+    if (datosLimpios.length === 0) return;
+
     this.makandState.status = 'Cargado';
     this.makandState.statusClass = 'text-success fw-bold';
     this.makandState.note = 'Datos consolidados en base al histórico de transportadoras externas y flota propia.';
@@ -170,38 +190,33 @@ export class DashSemanalComponent implements AfterViewInit {
     let totalViajes = 0;
     let totalCajas = 0;
     let viajesCumpleLlegada = 0;
-
     const transportadoras: Record<string, { total: number; cumpleLlegada: number; cumpleCargue: number }> = {};
     const almacenes: Record<string, number> = {};
     let mesDetectado = 'Julio 2026';
 
-    rows.forEach((row: any) => {
-      const transp = row['TRANSPORTE'] || row['Transportadora'];
-      if (!transp) return; // Salta filas vacías
-
+    datosLimpios.forEach((cleanRow: any) => {
+      const transp = cleanRow['_transpNormalizado'];
       totalViajes++;
-      if (row['MES']) mesDetectado = row['MES'];
+      if (cleanRow['MES']) mesDetectado = cleanRow['MES'];
 
-      const cajas = parseFloat(row['TOTAL CAJAS'] || row['Total Cajas'] || 0);
+      const cajas = parseFloat(cleanRow['TOTAL CAJAS'] || 0);
       totalCajas += isNaN(cajas) ? 0 : cajas;
 
-      if (!transportadoras[transp]) {
-        transportadoras[transp] = { total: 0, cumpleLlegada: 0, cumpleCargue: 0 };
-      }
+      if (!transportadoras[transp]) transportadoras[transp] = { total: 0, cumpleLlegada: 0, cumpleCargue: 0 };
       transportadoras[transp].total++;
 
-      const cumpleLlegadaStr = String(row['CUMPLIMIENTO LLEGADA VEHICULO'] || '').toUpperCase();
+      const cumpleLlegadaStr = String(cleanRow['CUMPLIMIENTO LLEGADA VEHICULO'] || '').toUpperCase();
       if (cumpleLlegadaStr.includes('CUMPLE') && !cumpleLlegadaStr.includes('NO')) {
         transportadoras[transp].cumpleLlegada++;
         viajesCumpleLlegada++;
       }
 
-      const cumpleCargueStr = String(row['CUMPLIMIENTO CARGUE VEHICULO'] || '').toUpperCase();
+      const cumpleCargueStr = String(cleanRow['CUMPLIMIENTO CARGUE VEHICULO'] || '').toUpperCase();
       if (cumpleCargueStr.includes('CUMPLE') && !cumpleCargueStr.includes('NO')) {
         transportadoras[transp].cumpleCargue++;
       }
 
-      const almacen = row['ALMACEN'] || row['Almacen'] || 'Otros';
+      const almacen = cleanRow['ALMACEN'] || cleanRow['ALMACÉN'] || 'Otros';
       almacenes[almacen] = (almacenes[almacen] || 0) + 1;
     });
 
@@ -209,57 +224,41 @@ export class DashSemanalComponent implements AfterViewInit {
     this.makandState.kpiPeriodo = `Periodo operativo: ${mesDetectado}`;
     this.makandState.kpiCumple = totalViajes > 0 ? `${Math.round((viajesCumpleLlegada / totalViajes) * 100)}%` : '0%';
     this.makandState.kpiCajas = totalCajas.toLocaleString('de-DE') as any;
-    this.makandState.kpiCajasSub = 'unidades distribuidas';
 
     const colores = ['#2a5298', '#11998e', '#ff416c', '#f5af19', '#8e44ad'];
-    let idx = 0;
-    let maxViajes = -1;
-    let liderTransp = 'Ninguna';
+    let idx = 0; let maxViajes = -1; let liderTransp = 'Ninguna';
 
     this.makandState.table = Object.keys(transportadoras).map(name => {
       const t = transportadoras[name];
       const pctValue = ((t.total / totalViajes) * 100).toFixed(1);
-
-      if (t.total > maxViajes) {
-        maxViajes = t.total;
-        liderTransp = name;
-      }
-
+      if (t.total > maxViajes) { maxViajes = t.total; liderTransp = name; }
+      
       const pctLlegada = Math.round((t.cumpleLlegada / t.total) * 100);
       const pctCargue = Math.round((t.cumpleCargue / t.total) * 100);
 
       return {
-        name,
-        total: t.total,
-        pct: `${pctValue}%`,
-        llegada: `${pctLlegada}%`,
-        llegadaClass: pctLlegada >= 80 ? 'pill-success' : 'pill-danger',
-        cargue: `${pctCargue}%`,
-        cargueClass: pctCargue >= 80 ? 'pill-success' : 'pill-danger',
+        name, total: t.total, pct: `${pctValue}%`,
+        llegada: `${pctLlegada}%`, llegadaClass: pctLlegada >= 80 ? 'pill-success' : 'pill-danger',
+        cargue: `${pctCargue}%`, cargueClass: pctCargue >= 80 ? 'pill-success' : 'pill-danger',
         color: colores[idx++ % colores.length]
       };
     });
 
     this.makandState.kpiLider = liderTransp;
     this.makandState.kpiLiderSub = `Lidera con ${maxViajes} despachos`;
-
     this.actualizarGraficoMakand(almacenes);
   }
 
   /**
-   * PROCESAMIENTO REPORTE 02: HORARIOS EN TIENDAS (D1, ARA, EXITO)
+   * PROCESAMIENTO 02: TIENDAS
    */
   private procesarReporteTiendas(rows: any[]) {
-    if (!rows || rows.length === 0) return;
-
+    // Normalización de cabeceras
     const datosLimpios = rows.reduce((acc: any[], row: any) => {
-      const cleanRow = Object.keys(row).reduce((cleanAcc: any, key: string) => {
-        cleanAcc[key.trim()] = row[key];
-        return cleanAcc;
-      }, {});
-
-      const region = cleanRow['Región'] || cleanRow['Region'] || cleanRow['RUTA'];
-
+      const cleanRow: any = {};
+      Object.keys(row).forEach(key => { if (key) cleanRow[key.trim().toUpperCase()] = row[key]; });
+      
+      const region = cleanRow['REGIÓN'] || cleanRow['REGION'] || cleanRow['RUTA'];
       if (region) {
         cleanRow['_regionNormalizada'] = region;
         acc.push(cleanRow);
@@ -273,11 +272,7 @@ export class DashSemanalComponent implements AfterViewInit {
     this.tiendasState.statusClass = 'text-success fw-bold';
     this.tiendasState.note = 'Análisis de ventanas de descarga con base en el tiempo en región capturado.';
 
-    let totalRegistros = 0;
-    let cumple = 0;
-    let parcial = 0;
-    let noCumple = 0;
-
+    let totalRegistros = 0; let cumple = 0; let parcial = 0; let noCumple = 0;
     const cedis: Record<string, number> = {};
     const rutasMap: Record<string, { total: number; cumple: number }> = {};
     let semanaNum = '';
@@ -285,19 +280,12 @@ export class DashSemanalComponent implements AfterViewInit {
     datosLimpios.forEach((cleanRow: any) => {
       totalRegistros++;
       const region = cleanRow['_regionNormalizada'];
-
       if (cleanRow['SEMANA']) semanaNum = `Semana ${cleanRow['SEMANA']}`;
 
       const cumplimiento = String(cleanRow['CUMPLIMIENTO'] || '').toUpperCase().trim();
-
-      if (cumplimiento.includes('NO CUMPLE')) {
-        noCumple++;
-      } else if (cumplimiento.includes('PARCIAL')) {
-        parcial++;
-        cumple++;
-      } else {
-        cumple++;
-      }
+      if (cumplimiento.includes('NO CUMPLE')) noCumple++;
+      else if (cumplimiento.includes('PARCIAL')) { parcial++; cumple++; }
+      else cumple++;
 
       const cedi = cleanRow['CEDI'] || 'Por clasificar';
       cedis[cedi] = (cedis[cedi] || 0) + 1;
@@ -313,10 +301,10 @@ export class DashSemanalComponent implements AfterViewInit {
     this.tiendasState.kpiParcial = parcial.toString();
     this.tiendasState.kpiNoCumple = noCumple.toString();
 
+    // Lógica Sustractiva (Caso A aplicativo)
     if (totalRegistros > 0) {
       const porcentajeFallas = (noCumple / totalRegistros) * 100;
       const porcentajeEfectividad = (100 - porcentajeFallas).toFixed(1);
-
       this.tiendasState.kpiCumpleSub = `${porcentajeEfectividad}% de efectividad`;
       this.tiendasState.kpiNoCumpleSub = `${porcentajeFallas.toFixed(1)}% de fallas`;
     } else {
@@ -325,8 +313,7 @@ export class DashSemanalComponent implements AfterViewInit {
     }
 
     this.tiendasState.tableCedi = Object.keys(cedis).map(name => ({
-      name,
-      total: cedis[name],
+      name, total: cedis[name],
       pct: totalRegistros > 0 ? `${((cedis[name] / totalRegistros) * 100).toFixed(1)}%` : '0%'
     }));
 
@@ -336,79 +323,79 @@ export class DashSemanalComponent implements AfterViewInit {
         const r = rutasMap[name];
         const pctCumple = r.total > 0 ? Math.round((r.cumple / r.total) * 100) : 0;
         return {
-          name,
-          total: r.total,
-          pct: `${pctCumple}%`,
+          name, total: r.total, pct: `${pctCumple}%`,
           pctClass: pctCumple >= 85 ? 'pill-success' : pctCumple >= 70 ? 'pill-warning' : 'pill-danger'
         };
-      })
-      .sort((a, b) => b.total - a.total)
-      .slice(0, 5);
+      }).sort((a, b) => b.total - a.total).slice(0, 5);
 
     try {
-      if (this.chartTiendas && this.chartTiendas.data && this.chartTiendas.data.datasets && this.chartTiendas.data.datasets.length > 0) {
+      if (this.chartTiendas && this.chartTiendas.data.datasets) {
         this.chartTiendas.data.datasets[0].data = [cumple - parcial, parcial, noCumple];
         this.chartTiendas.update();
       }
-    } catch (error) {
-      console.error("Gráfica pendiente de renderizado.", error);
-    }
+    } catch (e) { }
 
     this.cdr.detectChanges();
   }
 
   /**
-   * PROCESAMIENTO REPORTE 03: RECOLECCIÓN AGRICULTORES (CAMPO Y TRANSPORTE)
+   * PROCESAMIENTO 03: AGRICULTORES
    */
   private procesarReporteAgricultores(rows: any[]) {
+    // Normalización de cabeceras estricta para evitar undefined por espacios ("AGRICULTOR ")
+    const datosLimpios = rows.reduce((acc: any[], row: any) => {
+      const cleanRow: any = {};
+      Object.keys(row).forEach(key => { if (key) cleanRow[key.trim().toUpperCase()] = row[key]; });
+      
+      const agri = cleanRow['AGRICULTOR'] || cleanRow['NOMBRE AGRICULTOR'];
+      if (agri) {
+        cleanRow['_agriNormalizado'] = agri;
+        acc.push(cleanRow);
+      }
+      return acc;
+    }, []);
+
+    if (datosLimpios.length === 0) {
+      this.agriState.status = 'Error de lectura';
+      this.agriState.statusClass = 'text-danger fw-bold';
+      this.agriState.note = 'No se encontró la columna AGRICULTOR en la pestaña. Verifica el formato.';
+      this.cdr.detectChanges();
+      return;
+    }
+
     this.agriState.status = 'Cargado';
     this.agriState.statusClass = 'text-success fw-bold';
     this.agriState.note = 'Indicadores ponderados de recolección en fincas y tiempos de traslado a central.';
 
-    let totalViajes = 0;
-    let cumpleLlegada = 0;
-    let cumpleTiempo = 0;
-    let cumplePlanta = 0;
+    let totalViajes = 0; let cumpleLlegada = 0; let cumpleTiempo = 0; let cumplePlanta = 0;
     let semanaStr = 'S/N';
-
     const agricultores: Record<string, { total: number; llegada: number; tiempo: number; planta: number }> = {};
 
-    rows.forEach((row: any) => {
-      const agri = row['AGRICULTOR'] || row['Agricultor'];
-      if (!agri) return;
-
+    datosLimpios.forEach((cleanRow: any) => {
+      const agri = cleanRow['_agriNormalizado'];
       totalViajes++;
-      if (row['semana']) semanaStr = `S${row['semana']}`;
+      if (cleanRow['SEMANA']) semanaStr = `S${cleanRow['SEMANA']}`;
 
-      if (!agricultores[agri]) {
-        agricultores[agri] = { total: 0, llegada: 0, tiempo: 0, planta: 0 };
-      }
+      if (!agricultores[agri]) agricultores[agri] = { total: 0, llegada: 0, tiempo: 0, planta: 0 };
       agricultores[agri].total++;
 
-      const cLlegada = String(row['CUMPLIMIENTO LLEGADA AGRICULTOR'] || row['CUMPLIMIENTO LLEGADA ACRICULTOR'] || '').toUpperCase();
-      if (cLlegada.includes('CUMPLE') && !cLlegada.includes('NO')) {
-        cumpleLlegada++;
-        agricultores[agri].llegada++;
-      }
+      const cLlegada = String(cleanRow['CUMPLIMIENTO LLEGADA AGRICULTOR'] || cleanRow['CUMPLIMIENTO LLEGADA ACRICULTOR'] || '').toUpperCase();
+      if (cLlegada.includes('CUMPLE') && !cLlegada.includes('NO')) { cumpleLlegada++; agricultores[agri].llegada++; }
 
-      const cTiempo = String(row['CUMPLIMIENTO TIEMPO EN AGRICULTOR'] || '').toUpperCase();
-      if (cTiempo.includes('CUMPLE') && !cTiempo.includes('NO')) {
-        cumpleTiempo++;
-        agricultores[agri].tiempo++;
-      }
+      const cTiempo = String(cleanRow['CUMPLIMIENTO TIEMPO EN AGRICULTOR'] || cleanRow['CUMPLIMIENTO TIEMPO CARGUE'] || '').toUpperCase();
+      if (cTiempo.includes('CUMPLE') && !cTiempo.includes('NO')) { cumpleTiempo++; agricultores[agri].tiempo++; }
 
-      const cPlanta = String(row['CUMPLIMIENTO LLEGADA A PLANTA'] || '').toUpperCase();
-      if (cPlanta.includes('CUMPLE') && !cPlanta.includes('NO')) {
-        cumplePlanta++;
-        agricultores[agri].planta++;
-      }
+      const cPlanta = String(cleanRow['CUMPLIMIENTO LLEGADA A PLANTA'] || cleanRow['CUMPLIMIENTO LLEGADA PLANTA'] || '').toUpperCase();
+      if (cPlanta.includes('CUMPLE') && !cPlanta.includes('NO')) { cumplePlanta++; agricultores[agri].planta++; }
     });
 
     this.agriState.kpiSemanaLabel = `Semana: ${semanaStr}`;
     this.agriState.kpiTotal = totalViajes;
-    this.agriState.kpiLlegada = totalViajes > 0 ? `${Math.round((cumpleLlegada / totalViajes) * 100)}%` : '0%';
-    this.agriState.kpiTiempo = totalViajes > 0 ? `${Math.round((cumpleTiempo / totalViajes) * 100)}%` : '0%';
-    this.agriState.kpiPlanta = totalViajes > 0 ? `${Math.round((cumplePlanta / totalViajes) * 100)}%` : '0%';
+    
+    // Asignación Numérica Pura (Esto es lo que evita el NaN en el HTML al usar el símbolo % manual)
+    this.agriState.kpiLlegada = totalViajes > 0 ? Math.round((cumpleLlegada / totalViajes) * 100) : 0;
+    this.agriState.kpiTiempo = totalViajes > 0 ? Math.round((cumpleTiempo / totalViajes) * 100) : 0;
+    this.agriState.kpiPlanta = totalViajes > 0 ? Math.round((cumplePlanta / totalViajes) * 100) : 0;
     this.agriState.chartLabel = `Semana ${semanaStr}`;
     this.agriState.tableLabel = `Semana ${semanaStr}`;
 
@@ -425,116 +412,57 @@ export class DashSemanalComponent implements AfterViewInit {
       datasetLlegada.push(pLlegada);
 
       return {
-        name,
-        total: a.total,
-        llegada: `${pLlegada}%`,
-        llegadaClass: pLlegada >= 85 ? 'pill-success' : pLlegada >= 70 ? 'pill-warning' : 'pill-danger',
-        tiempo: `${pTiempo}%`,
-        tiempoClass: pTiempo >= 85 ? 'pill-success' : pTiempo >= 70 ? 'pill-warning' : 'pill-danger',
-        planta: `${pPlanta}%`,
-        plantaClass: pPlanta >= 85 ? 'pill-success' : pPlanta >= 70 ? 'pill-warning' : 'pill-danger'
+        name, total: a.total,
+        llegada: `${pLlegada}%`, llegadaClass: pLlegada >= 85 ? 'pill-success' : pLlegada >= 70 ? 'pill-warning' : 'pill-danger',
+        tiempo: `${pTiempo}%`, tiempoClass: pTiempo >= 85 ? 'pill-success' : pTiempo >= 70 ? 'pill-warning' : 'pill-danger',
+        planta: `${pPlanta}%`, plantaClass: pPlanta >= 85 ? 'pill-success' : pPlanta >= 70 ? 'pill-warning' : 'pill-danger'
       };
     });
 
     try {
-      if (this.chartAgri && this.chartAgri.data && this.chartAgri.data.datasets.length > 0) {
+      if (this.chartAgri && this.chartAgri.data.datasets.length > 0) {
         this.chartAgri.data.labels = labelsAgri;
         this.chartAgri.data.datasets[0].data = datasetLlegada;
         this.chartAgri.update();
       }
-    } catch (error) {
-      console.error("Gráfica pendiente de renderizado.", error);
-    }
+    } catch (e) { }
     
     this.cdr.detectChanges();
   }
 
-  /**
-   * INICIALIZADOR DE GRÁFICOS: Inicializa las vistas de Chart.js
-   */
+  // --- INICIALIZADOR DE GRÁFICOS ---
   private inicializarGraficosVacios() {
     this.chartTransp = new Chart(this.chartTranspRef.nativeElement, {
       type: 'bar',
-      data: {
-        labels: [],
-        datasets: [{
-          label: 'Viajes',
-          data: [],
-          backgroundColor: '#2a5298'
-        }]
-      },
-      options: {
-        indexAxis: 'y',
-        responsive: true,
-        maintainAspectRatio: false
-      }
+      data: { labels: [], datasets: [{ label: 'Viajes', data: [], backgroundColor: '#2a5298' }] },
+      options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false }
     });
 
     this.chartAlmacen = new Chart(this.chartAlmacenRef.nativeElement, {
       type: 'bar',
-      data: {
-        labels: [],
-        datasets: [{
-          label: 'Despachos',
-          data: [],
-          backgroundColor: '#f5af19'
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false
-      }
+      data: { labels: [], datasets: [{ label: 'Despachos', data: [], backgroundColor: '#f5af19' }] },
+      options: { responsive: true, maintainAspectRatio: false }
     });
 
     this.chartTiendas = new Chart(this.chartTiendasRef.nativeElement, {
       type: 'doughnut',
-      data: {
-        labels: ['Cumple', 'Cumple Parcial', 'No Cumple'],
-        datasets: [{
-          data: [0, 0, 0],
-          backgroundColor: ['#11998e', '#f5af19', '#ff416c']
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false
-      }
+      data: { labels: ['Cumple', 'Cumple Parcial', 'No Cumple'], datasets: [{ data: [0, 0, 0], backgroundColor: ['#11998e', '#f5af19', '#ff416c'] }] },
+      options: { responsive: true, maintainAspectRatio: false }
     });
 
     this.chartAgri = new Chart(this.chartAgriRef.nativeElement, {
       type: 'line',
-      data: {
-        labels: [],
-        datasets: [{
-          label: '% Cumplimiento Llegada',
-          data: [],
-          borderColor: '#11998e',
-          tension: 0.2,
-          fill: true,
-          backgroundColor: 'rgba(17, 153, 142, 0.1)'
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          y: { min: 0, max: 100 }
-        }
-      }
+      data: { labels: [], datasets: [{ label: '% Cumplimiento Llegada', data: [], borderColor: '#11998e', tension: 0.2, fill: true, backgroundColor: 'rgba(17, 153, 142, 0.1)' }] },
+      options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 100 } } }
     });
   }
 
-  /**
-   * Auxiliar para refrescar los gráficos del módulo Makand
-   */
   private actualizarGraficoMakand(almacenes: Record<string, number>) {
     if (!this.chartTransp || !this.chartAlmacen) return;
-
     this.chartTransp.data.labels = this.makandState.table.map(t => t.name);
     this.chartTransp.data.datasets[0].data = this.makandState.table.map(t => t.total);
     this.chartTransp.data.datasets[0].backgroundColor = this.makandState.table.map(t => t.color);
     this.chartTransp.update();
-
     this.chartAlmacen.data.labels = Object.keys(almacenes);
     this.chartAlmacen.data.datasets[0].data = Object.values(almacenes);
     this.chartAlmacen.update();
