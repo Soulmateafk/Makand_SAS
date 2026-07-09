@@ -5,16 +5,38 @@ import Chart from 'chart.js/auto';
 
 // Interfaces internas para mantener el tipado estricto en las tablas
 interface MakandTableRow {
-  name: string; total: number; pct: string; llegada: string; llegadaClass: string; cargue: string; cargueClass: string; color: string;
+  name: string;
+  total: number;
+  pct: string;
+  llegada: string;
+  llegadaClass: string;
+  cargue: string;
+  cargueClass: string;
+  color: string;
 }
+
 interface TiendasCediRow {
-  name: string; total: number; pct: string;
+  name: string;
+  total: number;
+  pct: string;
 }
+
 interface TiendasRutaRow {
-  name: string; total: number; pct: string; pctClass: string;
+  name: string;
+  total: number;
+  pct: string;
+  pctClass: string;
 }
+
 interface AgriTableRow {
-  name: string; total: number; llegada: string; llegadaClass: string; tiempo: string; tiempoClass: string; planta: string; plantaClass: string;
+  name: string;
+  total: number;
+  llegada: string;
+  llegadaClass: string;
+  tiempo: string;
+  tiempoClass: string;
+  planta: string;
+  plantaClass: string;
 }
 
 @Component({
@@ -25,7 +47,6 @@ interface AgriTableRow {
   styleUrl: './dashSem.css'
 })
 export class DashSemanalComponent implements AfterViewInit {
-
   // Referencias nativas a los canvas del HTML
   @ViewChild('chartTransp') chartTranspRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('chartAlmacen') chartAlmacenRef!: ElementRef<HTMLCanvasElement>;
@@ -43,25 +64,52 @@ export class DashSemanalComponent implements AfterViewInit {
 
   // --- Módulos de Estado vinculados directamente con tu Plantilla HTML ---
   makandState = {
-    src: 'Ningún archivo seleccionado', status: 'Pendiente de carga', statusClass: 'badge-pendiente',
+    src: 'Ningún archivo seleccionado',
+    status: 'Pendiente de carga',
+    statusClass: 'badge-pendiente',
     note: 'Sube el reporte de "VIAJEROS Y TERCEROS" para calcular viajes e ingresos a planta.',
-    kpiTotal: 0, kpiPeriodo: 'Sin datos', kpiCumple: '0%', kpiCajas: 0, kpiCajasSub: '0 cajas totales',
-    kpiLider: 'Ninguna', kpiLiderSub: 'Esperando registros', table: [] as MakandTableRow[]
+    kpiTotal: 0,
+    kpiPeriodo: 'Sin datos',
+    kpiCumple: '0%',
+    kpiCajas: 0 as any,
+    kpiCajasSub: '0 cajas totales',
+    kpiLider: 'Ninguna',
+    kpiLiderSub: 'Esperando registros',
+    table: [] as MakandTableRow[]
   };
 
   tiendasState = {
-    src: 'Ningún archivo seleccionado', status: 'Pendiente de carga', statusClass: 'badge-pendiente',
+    src: 'Ningún archivo seleccionado',
+    status: 'Pendiente de carga',
+    statusClass: 'badge-pendiente',
     note: 'Sube el reporte "ON TIME EN TIENDAS" para validar las ventanas de entrega por CEDI.',
-    kpiTotal: 0, kpiPeriodo: 'Sin datos', kpiCumple: '0', kpiCumpleSub: '0% de efectividad',
-    kpiParcial: '0', kpiParcialSub: 'Entregas toleradas', kpiNoCumple: '0', kpiNoCumpleSub: '0% de fallas',
-    tableCedi: [] as TiendasCediRow[], rutasMesLabel: '', tableRutas: [] as TiendasRutaRow[]
+    kpiTotal: 0,
+    kpiPeriodo: 'Sin datos',
+    kpiCumple: '0',
+    kpiCumpleSub: '0% de efectividad',
+    kpiParcial: '0',
+    kpiParcialSub: 'Entregas toleradas',
+    kpiNoCumple: '0',
+    kpiNoCumpleSub: '0% de fallas',
+    tableCedi: [] as TiendasCediRow[],
+    rutasMesLabel: '',
+    tableRutas: [] as TiendasRutaRow[]
   };
 
   agriState = {
-    src: 'Ningún archivo seleccionado', status: 'Pendiente de carga', statusClass: 'badge-pendiente',
+    src: 'Ningún archivo seleccionado',
+    status: 'Pendiente de carga',
+    statusClass: 'badge-pendiente',
     note: 'Sube el reporte "ON TIME AGRICULTORES" para evaluar los tres frentes de recolección.',
-    kpiSemanaLabel: '', kpiTotal: 0, kpiTotalSub: 'Viajes en la semana',
-    kpiLlegada: '0%', kpiTiempo: '0%', kpiPlanta: '0%', chartLabel: '', tableLabel: 'Pendiente', table: [] as AgriTableRow[]
+    kpiSemanaLabel: '',
+    kpiTotal: 0,
+    kpiTotalSub: 'Viajes en la semana',
+    kpiLlegada: '0%',
+    kpiTiempo: '0%',
+    kpiPlanta: '0%',
+    chartLabel: '',
+    tableLabel: 'Pendiente',
+    table: [] as AgriTableRow[]
   };
 
   ngAfterViewInit() {
@@ -102,9 +150,9 @@ export class DashSemanalComponent implements AfterViewInit {
         if (tipo === 'makand') this.procesarReporteMakand(jsonRows);
         if (tipo === 'tiendas') this.procesarReporteTiendas(jsonRows);
         if (tipo === 'agri') this.procesarReporteAgricultores(jsonRows);
-        
+
         // VITAL: Notificar a Angular que el estado ha cambiado para que refleje los datos instantáneamente
-        this.cdr.detectChanges(); 
+        this.cdr.detectChanges();
       }
     };
 
@@ -122,11 +170,12 @@ export class DashSemanalComponent implements AfterViewInit {
     let totalViajes = 0;
     let totalCajas = 0;
     let viajesCumpleLlegada = 0;
+
     const transportadoras: Record<string, { total: number; cumpleLlegada: number; cumpleCargue: number }> = {};
     const almacenes: Record<string, number> = {};
     let mesDetectado = 'Julio 2026';
 
-    rows.forEach(row => {
+    rows.forEach((row: any) => {
       const transp = row['TRANSPORTE'] || row['Transportadora'];
       if (!transp) return; // Salta filas vacías
 
@@ -193,6 +242,7 @@ export class DashSemanalComponent implements AfterViewInit {
 
     this.makandState.kpiLider = liderTransp;
     this.makandState.kpiLiderSub = `Lidera con ${maxViajes} despachos`;
+
     this.actualizarGraficoMakand(almacenes);
   }
 
@@ -200,190 +250,113 @@ export class DashSemanalComponent implements AfterViewInit {
    * PROCESAMIENTO REPORTE 02: HORARIOS EN TIENDAS (D1, ARA, EXITO)
    */
   private procesarReporteTiendas(rows: any[]) {
-  if (!rows || rows.length === 0) return;
+    if (!rows || rows.length === 0) return;
 
-  // 1. Normalización y limpieza (tu data de la imagen pasará perfecta por aquí)
-  const datosLimpios = rows.reduce((acc, row) => {
-    const cleanRow = Object.keys(row).reduce((cleanAcc, key) => {
-      cleanAcc[key.trim()] = row[key];
-      return cleanAcc;
-    }, {} as any);
+    const datosLimpios = rows.reduce((acc: any[], row: any) => {
+      const cleanRow = Object.keys(row).reduce((cleanAcc: any, key: string) => {
+        cleanAcc[key.trim()] = row[key];
+        return cleanAcc;
+      }, {});
 
-    const region = cleanRow['Región'] || cleanRow['Region'] || cleanRow['RUTA'];
-    
-    if (region) {
-      cleanRow['_regionNormalizada'] = region;
-      acc.push(cleanRow);
-    }
-    return acc;
-  }, [] as any[]);
+      const region = cleanRow['Región'] || cleanRow['Region'] || cleanRow['RUTA'];
 
-  if (datosLimpios.length === 0) return;
+      if (region) {
+        cleanRow['_regionNormalizada'] = region;
+        acc.push(cleanRow);
+      }
+      return acc;
+    }, []);
 
-  // 2. Inicialización de estado
-  this.tiendasState.status = 'Cargado';
-  this.tiendasState.statusClass = 'text-success fw-bold';
-  this.tiendasState.note = 'Análisis de ventanas de descarga con base en el tiempo en región capturado.';
+    if (datosLimpios.length === 0) return;
 
-  let totalRegistros = 0;
-  let cumple = 0;
-  let parcial = 0;
-  let noCumple = 0;
-  const cedis: Record<string, number> = {};
-  const rutasMap: Record<string, { total: number; cumple: number }> = {};
-  let semanaNum = '';
+    this.tiendasState.status = 'Cargado';
+    this.tiendasState.statusClass = 'text-success fw-bold';
+    this.tiendasState.note = 'Análisis de ventanas de descarga con base en el tiempo en región capturado.';
 
-  // 3. Procesamiento de los 1812 registros
-  datosLimpios.forEach((cleanRow: any) => {
-    totalRegistros++;
-    const region = cleanRow['_regionNormalizada'];
-    
-    if (cleanRow['SEMANA']) semanaNum = `Semana ${cleanRow['SEMANA']}`;
+    let totalRegistros = 0;
+    let cumple = 0;
+    let parcial = 0;
+    let noCumple = 0;
 
-    const cumplimiento = String(cleanRow['CUMPLIMIENTO'] || '').toUpperCase().trim();
-    
-    if (cumplimiento.includes('NO CUMPLE')) {
-      noCumple++;
-    } else if (cumplimiento.includes('PARCIAL')) {
-      parcial++;
-      cumple++; 
+    const cedis: Record<string, number> = {};
+    const rutasMap: Record<string, { total: number; cumple: number }> = {};
+    let semanaNum = '';
+
+    datosLimpios.forEach((cleanRow: any) => {
+      totalRegistros++;
+      const region = cleanRow['_regionNormalizada'];
+
+      if (cleanRow['SEMANA']) semanaNum = `Semana ${cleanRow['SEMANA']}`;
+
+      const cumplimiento = String(cleanRow['CUMPLIMIENTO'] || '').toUpperCase().trim();
+
+      if (cumplimiento.includes('NO CUMPLE')) {
+        noCumple++;
+      } else if (cumplimiento.includes('PARCIAL')) {
+        parcial++;
+        cumple++;
+      } else {
+        cumple++;
+      }
+
+      const cedi = cleanRow['CEDI'] || 'Por clasificar';
+      cedis[cedi] = (cedis[cedi] || 0) + 1;
+
+      if (!rutasMap[region]) rutasMap[region] = { total: 0, cumple: 0 };
+      rutasMap[region].total++;
+      if (!cumplimiento.includes('NO CUMPLE')) rutasMap[region].cumple++;
+    });
+
+    this.tiendasState.kpiTotal = totalRegistros;
+    this.tiendasState.kpiPeriodo = semanaNum || 'Mes operativo';
+    this.tiendasState.kpiCumple = cumple.toString();
+    this.tiendasState.kpiParcial = parcial.toString();
+    this.tiendasState.kpiNoCumple = noCumple.toString();
+
+    if (totalRegistros > 0) {
+      const porcentajeFallas = (noCumple / totalRegistros) * 100;
+      const porcentajeEfectividad = (100 - porcentajeFallas).toFixed(1);
+
+      this.tiendasState.kpiCumpleSub = `${porcentajeEfectividad}% de efectividad`;
+      this.tiendasState.kpiNoCumpleSub = `${porcentajeFallas.toFixed(1)}% de fallas`;
     } else {
-      cumple++;
+      this.tiendasState.kpiCumpleSub = '0% de efectividad';
+      this.tiendasState.kpiNoCumpleSub = '0% de fallas';
     }
 
-    const cedi = cleanRow['CEDI'] || 'Por clasificar';
-    cedis[cedi] = (cedis[cedi] || 0) + 1;
-
-    if (!rutasMap[region]) rutasMap[region] = { total: 0, cumple: 0 };
-    rutasMap[region].total++;
-    if (!cumplimiento.includes('NO CUMPLE')) rutasMap[region].cumple++;
-  });
-
-  // 4. Asignación de KPIs
-  this.tiendasState.kpiTotal = totalRegistros;
-  this.tiendasState.kpiPeriodo = semanaNum || 'Mes operativo';
-  this.tiendasState.kpiCumple = cumple.toString();
-  this.tiendasState.kpiParcial = parcial.toString();
-  this.tiendasState.kpiNoCumple = noCumple.toString();
-  
-  if (totalRegistros > 0) {
-    // Modelo lógico sustractivo para tu aplicativo (100 - penalidad)
-    const porcentajeFallas = (noCumple / totalRegistros) * 100;
-    const porcentajeEfectividad = (100 - porcentajeFallas).toFixed(1);
-    
-    this.tiendasState.kpiCumpleSub = `${porcentajeEfectividad}% de efectividad`;
-    this.tiendasState.kpiNoCumpleSub = `${porcentajeFallas.toFixed(1)}% de fallas`;
-  } else {
-    this.tiendasState.kpiCumpleSub = '0% de efectividad';
-    this.tiendasState.kpiNoCumpleSub = '0% de fallas';
-  }
-
-  // 5. Tablas
-  this.tiendasState.tableCedi = Object.keys(cedis).map(name => ({
-    name,
-    total: cedis[name],
-    pct: totalRegistros > 0 ? `${((cedis[name] / totalRegistros) * 100).toFixed(1)}%` : '0%'
-  }));
-
-  this.tiendasState.rutasMesLabel = semanaNum;
-  this.tiendasState.tableRutas = Object.keys(rutasMap)
-    .map(name => {
-      const r = rutasMap[name];
-      const pctCumple = r.total > 0 ? Math.round((r.cumple / r.total) * 100) : 0;
-      return {
-        name,
-        total: r.total,
-        pct: `${pctCumple}%`,
-        pctClass: pctCumple >= 85 ? 'pill-success' : pctCumple >= 70 ? 'pill-warning' : 'pill-danger'
-      };
-    })
-    .sort((a, b) => b.total - a.total)
-    .slice(0, 5);
-
-  // 6. Protección de la Gráfica (El paso crítico)
-  try {
-    if (this.chartTiendas && this.chartTiendas.data && this.chartTiendas.data.datasets && this.chartTiendas.data.datasets.length > 0) {
-      this.chartTiendas.data.datasets[0].data = [cumple - parcial, parcial, noCumple];
-      this.chartTiendas.update();
-    }
-  } catch (error) {
-    console.error("La gráfica aún no está lista para actualizarse, pero los datos seguirán cargando.", error);
-  }
-
-  // 7. Renderizado obligatorio en pantalla
-  this.cdr.detectChanges();
-}
-
-private procesarReporteAgricultores(rows: any[]) {
-  // 1. Validar que lleguen datos
-  if (!rows || rows.length === 0) return;
-
-  // 2. Normalización de cabeceras (Elimina espacios como 'CAJAS ENTREGADAS ')
-  const datosLimpios = rows.reduce((acc, row) => {
-    const cleanRow = Object.keys(row).reduce((cleanAcc, key) => {
-      cleanAcc[key.trim()] = row[key];
-      return cleanAcc;
-    }, {} as any);
-
-    // Filtro por columna obligatoria
-    const agricultor = cleanRow['AGRICULTOR'] || cleanRow['Agricultor'];
-    if (agricultor) {
-      cleanRow['_agricultorNormalizado'] = agricultor;
-      acc.push(cleanRow);
-    }
-    return acc;
-  }, [] as any[]);
-
-  if (datosLimpios.length === 0) return;
-
-  // 3. Inicialización del estado de agricultores
-  // (Asegúrate de que 'agricultoresState' esté declarado en tu componente)
-  if (this.agricultoresState) {
-    this.agricultoresState.status = 'Cargado';
-    this.agricultoresState.statusClass = 'text-success fw-bold';
-    this.agricultoresState.note = 'Análisis de flujo de canastillas por productor agrícola.';
-  }
-
-  let totalEntregadas = 0;
-  let totalRecogidas = 0;
-  const agriMap: Record<string, { entregadas: number; recogidas: number }> = {};
-
-  // 4. Procesamiento y acumulación de canastillas
-  datosLimpios.forEach((cleanRow: any) => {
-    const nombre = cleanRow['_agricultorNormalizado'];
-    
-    // Convertir de forma segura a número (por si vienen como string en el Excel)
-    const entregadas = parseInt(cleanRow['CAJAS ENTREGADAS'] || '0', 10) || 0;
-    const recogidas = parseInt(cleanRow['CAJAS RECOGIDAS'] || '0', 10) || 0;
-
-    totalEntregadas += entregadas;
-    totalRecogidas += recogidas;
-
-    if (!agriMap[nombre]) {
-      agriMap[nombre] = { entregadas: 0, recogidas: 0 };
-    }
-    agriMap[nombre].entregadas += entregadas;
-    agriMap[nombre].recogidas += recogidas;
-  });
-
-  // 5. Asignación de KPIs globales al estado
-  if (this.agricultoresState) {
-    this.agricultoresState.kpiTotalEntregadas = totalEntregadas;
-    this.agricultoresState.kpiTotalRecogidas = totalRecogidas;
-
-    // Generar mapeo para tablas o listados ordenados por mayor entrega
-    this.agricultoresState.tableAgricultores = Object.keys(agriMap).map(name => ({
+    this.tiendasState.tableCedi = Object.keys(cedis).map(name => ({
       name,
-      entregadas: agriMap[name].entregadas,
-      recogidas: agriMap[name].recogidas,
-      totalFlujo: agriMap[name].entregadas + agriMap[name].recogidas
-    }))
-    .sort((a, b) => b.entregadas - a.entregadas);
+      total: cedis[name],
+      pct: totalRegistros > 0 ? `${((cedis[name] / totalRegistros) * 100).toFixed(1)}%` : '0%'
+    }));
+
+    this.tiendasState.rutasMesLabel = semanaNum;
+    this.tiendasState.tableRutas = Object.keys(rutasMap)
+      .map(name => {
+        const r = rutasMap[name];
+        const pctCumple = r.total > 0 ? Math.round((r.cumple / r.total) * 100) : 0;
+        return {
+          name,
+          total: r.total,
+          pct: `${pctCumple}%`,
+          pctClass: pctCumple >= 85 ? 'pill-success' : pctCumple >= 70 ? 'pill-warning' : 'pill-danger'
+        };
+      })
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 5);
+
+    try {
+      if (this.chartTiendas && this.chartTiendas.data && this.chartTiendas.data.datasets && this.chartTiendas.data.datasets.length > 0) {
+        this.chartTiendas.data.datasets[0].data = [cumple - parcial, parcial, noCumple];
+        this.chartTiendas.update();
+      }
+    } catch (error) {
+      console.error("Gráfica pendiente de renderizado.", error);
+    }
+
+    this.cdr.detectChanges();
   }
 
-  // 6. Forzar renderizado en la interfaz de Angular
-  this.cdr.detectChanges();
-}
   /**
    * PROCESAMIENTO REPORTE 03: RECOLECCIÓN AGRICULTORES (CAMPO Y TRANSPORTE)
    */
@@ -397,10 +370,10 @@ private procesarReporteAgricultores(rows: any[]) {
     let cumpleTiempo = 0;
     let cumplePlanta = 0;
     let semanaStr = 'S/N';
-    
+
     const agricultores: Record<string, { total: number; llegada: number; tiempo: number; planta: number }> = {};
 
-    rows.forEach(row => {
+    rows.forEach((row: any) => {
       const agri = row['AGRICULTOR'] || row['Agricultor'];
       if (!agri) return;
 
@@ -436,7 +409,6 @@ private procesarReporteAgricultores(rows: any[]) {
     this.agriState.kpiLlegada = totalViajes > 0 ? `${Math.round((cumpleLlegada / totalViajes) * 100)}%` : '0%';
     this.agriState.kpiTiempo = totalViajes > 0 ? `${Math.round((cumpleTiempo / totalViajes) * 100)}%` : '0%';
     this.agriState.kpiPlanta = totalViajes > 0 ? `${Math.round((cumplePlanta / totalViajes) * 100)}%` : '0%';
-    
     this.agriState.chartLabel = `Semana ${semanaStr}`;
     this.agriState.tableLabel = `Semana ${semanaStr}`;
 
@@ -464,11 +436,17 @@ private procesarReporteAgricultores(rows: any[]) {
       };
     });
 
-    if (this.chartAgri) {
-      this.chartAgri.data.labels = labelsAgri;
-      this.chartAgri.data.datasets[0].data = datasetLlegada;
-      this.chartAgri.update();
+    try {
+      if (this.chartAgri && this.chartAgri.data && this.chartAgri.data.datasets.length > 0) {
+        this.chartAgri.data.labels = labelsAgri;
+        this.chartAgri.data.datasets[0].data = datasetLlegada;
+        this.chartAgri.update();
+      }
+    } catch (error) {
+      console.error("Gráfica pendiente de renderizado.", error);
     }
+    
+    this.cdr.detectChanges();
   }
 
   /**
@@ -477,26 +455,72 @@ private procesarReporteAgricultores(rows: any[]) {
   private inicializarGraficosVacios() {
     this.chartTransp = new Chart(this.chartTranspRef.nativeElement, {
       type: 'bar',
-      data: { labels: [], datasets: [{ label: 'Viajes', data: [], backgroundColor: '#2a5298' }] },
-      options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false }
+      data: {
+        labels: [],
+        datasets: [{
+          label: 'Viajes',
+          data: [],
+          backgroundColor: '#2a5298'
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false
+      }
     });
 
     this.chartAlmacen = new Chart(this.chartAlmacenRef.nativeElement, {
       type: 'bar',
-      data: { labels: [], datasets: [{ label: 'Despachos', data: [], backgroundColor: '#f5af19' }] },
-      options: { responsive: true, maintainAspectRatio: false }
+      data: {
+        labels: [],
+        datasets: [{
+          label: 'Despachos',
+          data: [],
+          backgroundColor: '#f5af19'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false
+      }
     });
 
     this.chartTiendas = new Chart(this.chartTiendasRef.nativeElement, {
       type: 'doughnut',
-      data: { labels: ['Cumple', 'Cumple Parcial', 'No Cumple'], datasets: [{ data: [0, 0, 0], backgroundColor: ['#11998e', '#f5af19', '#ff416c'] }] },
-      options: { responsive: true, maintainAspectRatio: false }
+      data: {
+        labels: ['Cumple', 'Cumple Parcial', 'No Cumple'],
+        datasets: [{
+          data: [0, 0, 0],
+          backgroundColor: ['#11998e', '#f5af19', '#ff416c']
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false
+      }
     });
 
     this.chartAgri = new Chart(this.chartAgriRef.nativeElement, {
       type: 'line',
-      data: { labels: [], datasets: [{ label: '% Cumplimiento Llegada', data: [], borderColor: '#11998e', tension: 0.2, fill: true, backgroundColor: 'rgba(17, 153, 142, 0.1)' }] },
-      options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 100 } } }
+      data: {
+        labels: [],
+        datasets: [{
+          label: '% Cumplimiento Llegada',
+          data: [],
+          borderColor: '#11998e',
+          tension: 0.2,
+          fill: true,
+          backgroundColor: 'rgba(17, 153, 142, 0.1)'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: { min: 0, max: 100 }
+        }
+      }
     });
   }
 
@@ -505,7 +529,7 @@ private procesarReporteAgricultores(rows: any[]) {
    */
   private actualizarGraficoMakand(almacenes: Record<string, number>) {
     if (!this.chartTransp || !this.chartAlmacen) return;
-    
+
     this.chartTransp.data.labels = this.makandState.table.map(t => t.name);
     this.chartTransp.data.datasets[0].data = this.makandState.table.map(t => t.total);
     this.chartTransp.data.datasets[0].backgroundColor = this.makandState.table.map(t => t.color);
