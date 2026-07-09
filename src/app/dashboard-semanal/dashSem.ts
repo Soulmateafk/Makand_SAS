@@ -243,7 +243,7 @@ export class DashSemanalComponent implements AfterViewInit {
   let semanaNum = '';
 
   // 4. Procesamiento de la Data Limpia
-  datosLimpios.forEach(cleanRow => {
+  datosLimpios.forEach((cleanRow: any) => {
     totalRegistros++;
     const region = cleanRow['_regionNormalizada'];
     
