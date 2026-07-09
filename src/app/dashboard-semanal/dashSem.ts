@@ -1,42 +1,20 @@
-import { Component, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
+import { Component, ElementRef, ViewChild, AfterViewInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import * as XLSX from 'xlsx';
 import Chart from 'chart.js/auto';
 
 // Interfaces internas para mantener el tipado estricto en las tablas
 interface MakandTableRow {
-  name: string;
-  total: number;
-  pct: string;
-  llegada: string;
-  llegadaClass: string;
-  cargue: string;
-  cargueClass: string;
-  color: string;
+  name: string; total: number; pct: string; llegada: string; llegadaClass: string; cargue: string; cargueClass: string; color: string;
 }
-
 interface TiendasCediRow {
-  name: string;
-  total: number;
-  pct: string;
+  name: string; total: number; pct: string;
 }
-
 interface TiendasRutaRow {
-  name: string;
-  total: number;
-  pct: string;
-  pctClass: string;
+  name: string; total: number; pct: string; pctClass: string;
 }
-
 interface AgriTableRow {
-  name: string;
-  total: number;
-  llegada: string;
-  llegadaClass: string;
-  tiempo: string;
-  tiempoClass: string;
-  planta: string;
-  plantaClass: string;
+  name: string; total: number; llegada: string; llegadaClass: string; tiempo: string; tiempoClass: string; planta: string; plantaClass: string;
 }
 
 @Component({
@@ -47,6 +25,7 @@ interface AgriTableRow {
   styleUrl: './dashSem.css'
 })
 export class DashSemanalComponent implements AfterViewInit {
+
   // Referencias nativas a los canvas del HTML
   @ViewChild('chartTransp') chartTranspRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('chartAlmacen') chartAlmacenRef!: ElementRef<HTMLCanvasElement>;
@@ -59,55 +38,30 @@ export class DashSemanalComponent implements AfterViewInit {
   private chartTiendas?: Chart;
   private chartAgri?: Chart;
 
-  // --- Módulos de Estado vinculados directamente con tu Plantilla HTML ---
+  // Inyectamos ChangeDetectorRef para forzar el refresco de la vista al cargar archivos
+  constructor(private cdr: ChangeDetectorRef) {}
 
+  // --- Módulos de Estado vinculados directamente con tu Plantilla HTML ---
   makandState = {
-    src: 'Ningún archivo seleccionado',
-    status: 'Pendiente de carga',
-    statusClass: 'badge-pendiente',
+    src: 'Ningún archivo seleccionado', status: 'Pendiente de carga', statusClass: 'badge-pendiente',
     note: 'Sube el reporte de "VIAJEROS Y TERCEROS" para calcular viajes e ingresos a planta.',
-    kpiTotal: 0,
-    kpiPeriodo: 'Sin datos',
-    kpiCumple: '0%',
-    kpiCajas: 0,
-    kpiCajasSub: '0 cajas totales',
-    kpiLider: 'Ninguna',
-    kpiLiderSub: 'Esperando registros',
-    table: [] as MakandTableRow[]
+    kpiTotal: 0, kpiPeriodo: 'Sin datos', kpiCumple: '0%', kpiCajas: 0, kpiCajasSub: '0 cajas totales',
+    kpiLider: 'Ninguna', kpiLiderSub: 'Esperando registros', table: [] as MakandTableRow[]
   };
 
   tiendasState = {
-    src: 'Ningún archivo seleccionado',
-    status: 'Pendiente de carga',
-    statusClass: 'badge-pendiente',
+    src: 'Ningún archivo seleccionado', status: 'Pendiente de carga', statusClass: 'badge-pendiente',
     note: 'Sube el reporte "ON TIME EN TIENDAS" para validar las ventanas de entrega por CEDI.',
-    kpiTotal: 0,
-    kpiPeriodo: 'Sin datos',
-    kpiCumple: '0',
-    kpiCumpleSub: '0% del total',
-    kpiParcial: '0',
-    kpiParcialSub: '0% del total',
-    kpiNoCumple: '0',
-    kpiNoCumpleSub: '0% del total',
-    tableCedi: [] as TiendasCediRow[],
-    rutasMesLabel: '',
-    tableRutas: [] as TiendasRutaRow[]
+    kpiTotal: 0, kpiPeriodo: 'Sin datos', kpiCumple: '0', kpiCumpleSub: '0% de efectividad',
+    kpiParcial: '0', kpiParcialSub: 'Entregas toleradas', kpiNoCumple: '0', kpiNoCumpleSub: '0% de fallas',
+    tableCedi: [] as TiendasCediRow[], rutasMesLabel: '', tableRutas: [] as TiendasRutaRow[]
   };
 
   agriState = {
-    src: 'Ningún archivo seleccionado',
-    status: 'Pendiente de carga',
-    statusClass: 'badge-pendiente',
+    src: 'Ningún archivo seleccionado', status: 'Pendiente de carga', statusClass: 'badge-pendiente',
     note: 'Sube el reporte "ON TIME AGRICULTORES" para evaluar los tres frentes de recolección.',
-    kpiSemanaLabel: '',
-    kpiTotal: 0,
-    kpiTotalSub: 'Viajes en la semana',
-    kpiLlegada: '0%',
-    kpiTiempo: '0%',
-    kpiPlanta: '0%',
-    chartLabel: '',
-    tableLabel: 'Pendiente',
-    table: [] as AgriTableRow[]
+    kpiSemanaLabel: '', kpiTotal: 0, kpiTotalSub: 'Viajes en la semana',
+    kpiLlegada: '0%', kpiTiempo: '0%', kpiPlanta: '0%', chartLabel: '', tableLabel: 'Pendiente', table: [] as AgriTableRow[]
   };
 
   ngAfterViewInit() {
@@ -148,6 +102,9 @@ export class DashSemanalComponent implements AfterViewInit {
         if (tipo === 'makand') this.procesarReporteMakand(jsonRows);
         if (tipo === 'tiendas') this.procesarReporteTiendas(jsonRows);
         if (tipo === 'agri') this.procesarReporteAgricultores(jsonRows);
+        
+        // VITAL: Notificar a Angular que el estado ha cambiado para que refleje los datos instantáneamente
+        this.cdr.detectChanges(); 
       }
     };
 
@@ -165,29 +122,25 @@ export class DashSemanalComponent implements AfterViewInit {
     let totalViajes = 0;
     let totalCajas = 0;
     let viajesCumpleLlegada = 0;
-    
     const transportadoras: Record<string, { total: number; cumpleLlegada: number; cumpleCargue: number }> = {};
     const almacenes: Record<string, number> = {};
     let mesDetectado = 'Julio 2026';
 
     rows.forEach(row => {
       const transp = row['TRANSPORTE'] || row['Transportadora'];
-      if (!transp) return; // Salta filas vacías o de decoración en el Excel
+      if (!transp) return; // Salta filas vacías
 
       totalViajes++;
       if (row['MES']) mesDetectado = row['MES'];
 
-      // Conteo de cajas movilizadas
       const cajas = parseFloat(row['TOTAL CAJAS'] || row['Total Cajas'] || 0);
       totalCajas += isNaN(cajas) ? 0 : cajas;
 
-      // Agrupación por Transportadora
       if (!transportadoras[transp]) {
         transportadoras[transp] = { total: 0, cumpleLlegada: 0, cumpleCargue: 0 };
       }
       transportadoras[transp].total++;
 
-      // Evaluar cumplimientos de llegada y cargue
       const cumpleLlegadaStr = String(row['CUMPLIMIENTO LLEGADA VEHICULO'] || '').toUpperCase();
       if (cumpleLlegadaStr.includes('CUMPLE') && !cumpleLlegadaStr.includes('NO')) {
         transportadoras[transp].cumpleLlegada++;
@@ -199,19 +152,16 @@ export class DashSemanalComponent implements AfterViewInit {
         transportadoras[transp].cumpleCargue++;
       }
 
-      // Agrupación por almacén destino
       const almacen = row['ALMACEN'] || row['Almacen'] || 'Otros';
       almacenes[almacen] = (almacenes[almacen] || 0) + 1;
     });
 
-    // Rellenado de KPIs de la sección 01
     this.makandState.kpiTotal = totalViajes;
     this.makandState.kpiPeriodo = `Periodo operativo: ${mesDetectado}`;
     this.makandState.kpiCumple = totalViajes > 0 ? `${Math.round((viajesCumpleLlegada / totalViajes) * 100)}%` : '0%';
     this.makandState.kpiCajas = totalCajas.toLocaleString('de-DE') as any;
     this.makandState.kpiCajasSub = 'unidades distribuidas';
 
-    // Generar la tabla de transportadoras para el HTML
     const colores = ['#2a5298', '#11998e', '#ff416c', '#f5af19', '#8e44ad'];
     let idx = 0;
     let maxViajes = -1;
@@ -220,7 +170,7 @@ export class DashSemanalComponent implements AfterViewInit {
     this.makandState.table = Object.keys(transportadoras).map(name => {
       const t = transportadoras[name];
       const pctValue = ((t.total / totalViajes) * 100).toFixed(1);
-      
+
       if (t.total > maxViajes) {
         maxViajes = t.total;
         liderTransp = name;
@@ -243,8 +193,6 @@ export class DashSemanalComponent implements AfterViewInit {
 
     this.makandState.kpiLider = liderTransp;
     this.makandState.kpiLiderSub = `Lidera con ${maxViajes} despachos`;
-
-    // Renderizado de gráficos de la sección 01
     this.actualizarGraficoMakand(almacenes);
   }
 
@@ -260,34 +208,32 @@ export class DashSemanalComponent implements AfterViewInit {
     let cumple = 0;
     let parcial = 0;
     let noCumple = 0;
-
     const cedis: Record<string, number> = {};
     const rutasMap: Record<string, { total: number; cumple: number }> = {};
     let semanaNum = '';
 
     rows.forEach(row => {
-      const region = row['Región'] || row['Región'] || row['RUTA '];
-      if (!region) return;
+      // Cobertura ampliada para posibles nombres de cabecera en el Excel (espacios, sin tildes, etc.)
+      const region = row['Región'] || row['Region'] || row['RUTA '] || row['RUTA'];
+      if (!region) return; 
 
       totalRegistros++;
       if (row['SEMANA']) semanaNum = `Semana ${row['SEMANA']}`;
 
-      // Clasificación de cumplimiento de horarios
-      const cumplimiento = String(row['CUMPLIMIENTO'] || '').toUpperCase();
+      const cumplimiento = String(row['CUMPLIMIENTO'] || row['Cumplimiento'] || '').toUpperCase();
+      
       if (cumplimiento.includes('NO CUMPLE')) {
         noCumple++;
       } else if (cumplimiento.includes('PARCIAL')) {
         parcial++;
-        cumple++; // Si aplica como cumplimiento intermedio
+        cumple++; 
       } else {
         cumple++;
       }
 
-      // Conteo por CEDI de despacho
       const cedi = row['CEDI'] || 'Por clasificar';
       cedis[cedi] = (cedis[cedi] || 0) + 1;
 
-      // Desempeño de rutas críticas
       if (!rutasMap[region]) rutasMap[region] = { total: 0, cumple: 0 };
       rutasMap[region].total++;
       if (!cumplimiento.includes('NO CUMPLE')) rutasMap[region].cumple++;
@@ -295,21 +241,27 @@ export class DashSemanalComponent implements AfterViewInit {
 
     this.tiendasState.kpiTotal = totalRegistros;
     this.tiendasState.kpiPeriodo = semanaNum || 'Mes operativo';
+    
+    // Asignación de contadores base
     this.tiendasState.kpiCumple = cumple.toString();
-    this.tiendasState.kpiCumpleSub = `${((cumple / totalRegistros) * 100).toFixed(1)}% de efectividad`;
     this.tiendasState.kpiParcial = parcial.toString();
-    this.tiendasState.kpiParcialSub = 'Entregas toleradas';
     this.tiendasState.kpiNoCumple = noCumple.toString();
-    this.tiendasState.kpiNoCumpleSub = `${((noCumple / totalRegistros) * 100).toFixed(1)}% de fallas`;
+    
+    if (totalRegistros > 0) {
+      // Aplicación del modelo lógico sustractivo para efectividad real (100% - penalidad)
+      const porcentajeFallas = (noCumple / totalRegistros) * 100;
+      const porcentajeEfectividad = (100 - porcentajeFallas).toFixed(1);
+      
+      this.tiendasState.kpiCumpleSub = `${porcentajeEfectividad}% de efectividad`;
+      this.tiendasState.kpiNoCumpleSub = `${porcentajeFallas.toFixed(1)}% de fallas`;
+    }
 
-    // Armar tabla CEDI
     this.tiendasState.tableCedi = Object.keys(cedis).map(name => ({
       name,
       total: cedis[name],
       pct: `${((cedis[name] / totalRegistros) * 100).toFixed(1)}%`
     }));
 
-    // Armar tabla Rutas principales
     this.tiendasState.rutasMesLabel = semanaNum;
     this.tiendasState.tableRutas = Object.keys(rutasMap)
       .map(name => {
@@ -323,9 +275,8 @@ export class DashSemanalComponent implements AfterViewInit {
         };
       })
       .sort((a, b) => b.total - a.total)
-      .slice(0, 5); // Tomamos el Top 5 rutas con más movimientos
+      .slice(0, 5);
 
-    // Refrescar gráfico circular de tiendas
     if (this.chartTiendas) {
       this.chartTiendas.data.datasets[0].data = [cumple - parcial, parcial, noCumple];
       this.chartTiendas.update();
@@ -345,7 +296,6 @@ export class DashSemanalComponent implements AfterViewInit {
     let cumpleTiempo = 0;
     let cumplePlanta = 0;
     let semanaStr = 'S/N';
-
     const agricultores: Record<string, { total: number; llegada: number; tiempo: number; planta: number }> = {};
 
     rows.forEach(row => {
@@ -360,21 +310,18 @@ export class DashSemanalComponent implements AfterViewInit {
       }
       agricultores[agri].total++;
 
-      // 1. Cumplimiento de llegada del carro al agricultor
       const cLlegada = String(row['CUMPLIMIENTO LLEGADA AGRICULTOR'] || row['CUMPLIMIENTO LLEGADA ACRICULTOR'] || '').toUpperCase();
       if (cLlegada.includes('CUMPLE') && !cLlegada.includes('NO')) {
         cumpleLlegada++;
         agricultores[agri].llegada++;
       }
 
-      // 2. Cumplimiento del tiempo de permanencia en la finca
       const cTiempo = String(row['CUMPLIMIENTO TIEMPO EN AGRICULTOR'] || '').toUpperCase();
       if (cTiempo.includes('CUMPLE') && !cTiempo.includes('NO')) {
         cumpleTiempo++;
         agricultores[agri].tiempo++;
       }
 
-      // 3. Cumplimiento del transporte hacia la planta
       const cPlanta = String(row['CUMPLIMIENTO LLEGADA A PLANTA'] || '').toUpperCase();
       if (cPlanta.includes('CUMPLE') && !cPlanta.includes('NO')) {
         cumplePlanta++;
@@ -391,7 +338,6 @@ export class DashSemanalComponent implements AfterViewInit {
     this.agriState.chartLabel = `Semana ${semanaStr}`;
     this.agriState.tableLabel = `Semana ${semanaStr}`;
 
-    // Construcción de la tabla estructurada para agricultores
     const labelsAgri: string[] = [];
     const datasetLlegada: number[] = [];
 
@@ -416,7 +362,6 @@ export class DashSemanalComponent implements AfterViewInit {
       };
     });
 
-    // Actualizar gráfico de barras de agricultores
     if (this.chartAgri) {
       this.chartAgri.data.labels = labelsAgri;
       this.chartAgri.data.datasets[0].data = datasetLlegada;
@@ -425,34 +370,27 @@ export class DashSemanalComponent implements AfterViewInit {
   }
 
   /**
-   * INICIALIZADOR DE GRÁFICOS: Inicializa las vistas de Chart.js con configuraciones limpias
+   * INICIALIZADOR DE GRÁFICOS: Inicializa las vistas de Chart.js
    */
   private inicializarGraficosVacios() {
-    // 01. Gráfico Barras Horizontal - Viajes por Transportadora
     this.chartTransp = new Chart(this.chartTranspRef.nativeElement, {
       type: 'bar',
       data: { labels: [], datasets: [{ label: 'Viajes', data: [], backgroundColor: '#2a5298' }] },
       options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false }
     });
 
-    // 01. Gráfico de Barras Vertical - Destino de Almacenes
     this.chartAlmacen = new Chart(this.chartAlmacenRef.nativeElement, {
       type: 'bar',
       data: { labels: [], datasets: [{ label: 'Despachos', data: [], backgroundColor: '#f5af19' }] },
       options: { responsive: true, maintainAspectRatio: false }
     });
 
-    // 02. Gráfico de Dona - Distribución de cumplimiento Tiendas
     this.chartTiendas = new Chart(this.chartTiendasRef.nativeElement, {
       type: 'doughnut',
-      data: {
-        labels: ['Cumple', 'Cumple Parcial', 'No Cumple'],
-        datasets: [{ data: [0, 0, 0], backgroundColor: ['#11998e', '#f5af19', '#ff416c'] }]
-      },
+      data: { labels: ['Cumple', 'Cumple Parcial', 'No Cumple'], datasets: [{ data: [0, 0, 0], backgroundColor: ['#11998e', '#f5af19', '#ff416c'] }] },
       options: { responsive: true, maintainAspectRatio: false }
     });
 
-    // 03. Gráfico de Línea - Cumplimiento Llegada por Agricultor
     this.chartAgri = new Chart(this.chartAgriRef.nativeElement, {
       type: 'line',
       data: { labels: [], datasets: [{ label: '% Cumplimiento Llegada', data: [], borderColor: '#11998e', tension: 0.2, fill: true, backgroundColor: 'rgba(17, 153, 142, 0.1)' }] },
@@ -461,24 +399,20 @@ export class DashSemanalComponent implements AfterViewInit {
   }
 
   /**
-   * Auxiliar para refrescar y poblar los gráficos cruzados del módulo Makand
+   * Auxiliar para refrescar los gráficos del módulo Makand
    */
   private actualizarGraficoMakand(almacenes: Record<string, number>) {
     if (!this.chartTransp || !this.chartAlmacen) return;
-
-    // Actualizar Gráfico 1: Viajes por transportadora
+    
     this.chartTransp.data.labels = this.makandState.table.map(t => t.name);
     this.chartTransp.data.datasets[0].data = this.makandState.table.map(t => t.total);
     this.chartTransp.data.datasets[0].backgroundColor = this.makandState.table.map(t => t.color);
     this.chartTransp.update();
 
-    // Actualizar Gráfico 2: Despachos por almacén de destino
     this.chartAlmacen.data.labels = Object.keys(almacenes);
     this.chartAlmacen.data.datasets[0].data = Object.values(almacenes);
     this.chartAlmacen.update();
   }
 }
 
-// --- SOLUCIÓN ERROR COMPILADOR ROUTING ANGULAR ---
-// Token exportado requerido por tu 'app.routes.ts' para mapear la ruta sin fallas de carga limpia.
 export const dashSem = 'dashboardsemanal';

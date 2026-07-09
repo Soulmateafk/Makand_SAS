@@ -1,24 +1,26 @@
 /* ==========================================================================
-   VARIABLES DE DISEÑO & TEMAS (Paleta Logística Moderna)
+   VARIABLES DE DISEÑO - PALETA DARK MODE (Logística Premium)
    ========================================================================== */
 :host {
-  --bg-main: #f8fafc;
-  --bg-card: #ffffff;
-  --border-color: #e2e8f0;
+  --bg-main: #0b0f19;       /* Negro/Azul oscuro profundo para el fondo */
+  --bg-card: #131c2e;       /* Gris azulado oscuro para las tarjetas */
+  --border-color: #1e293b;  /* Bordes oscuros integrados */
   
-  /* Tintas de Texto */
-  --ink-main: #0f172a;
-  --ink-muted: #475569;
-  --ink-dim: #94a3b8;
+  /* Tintas de Texto Invertidas para Alta Legibilidad */
+  --ink-main: #f8fafc;      /* Blanco grisáceo principal */
+  --ink-muted: #94a3b8;     /* Gris claro para secundarios */
+  --ink-dim: #64748b;       /* Gris medio para datos menos relevantes */
 
-  /* Colores de Estado de Flota */
-  --brand-blue: #2563eb;
-  --state-teal: #0d9488;
-  --state-amber: #d97706;
-  --state-red: #dc2626;
-  --state-bg-teal: #f0fdfa;
-  --state-bg-amber: #fffbeb;
-  --state-bg-red: #fef2f2;
+  /* Colores de Estado Vibrantes (Ajustados para fondos oscuros) */
+  --brand-blue: #3b82f6;
+  --state-teal: #14b8a6;
+  --state-amber: #f59e0b;
+  --state-red: #ef4444;
+  
+  /* Fondos sutiles con transparencia para los Badges/Pills */
+  --state-bg-teal: rgba(20, 184, 166, 0.15);
+  --state-bg-amber: rgba(245, 158, 11, 0.15);
+  --state-bg-red: rgba(239, 68, 68, 0.15);
 }
 
 /* Base de tipografía y reset sutil para el componente */
@@ -59,7 +61,7 @@ header.top .eyebrow {
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: var(--brand-blue);
-  background: #eff6ff;
+  background: rgba(59, 130, 246, 0.15); /* Fondo adaptado */
   padding: 4px 10px;
   border-radius: 4px;
   margin-bottom: 12px;
@@ -110,7 +112,7 @@ header.top p {
 .section-num {
   font-size: 1.25rem;
   font-weight: 800;
-  color: var(--ink-dim);
+  color: var(--ink-muted);
   background: var(--border-color);
   padding: 2px 8px;
   border-radius: 6px;
@@ -146,7 +148,7 @@ header.top p {
 }
 
 .upload-btn {
-  background: var(--ink-main);
+  background: var(--brand-blue); /* Cambiado a azul para destacar en fondo negro */
   color: #fff;
   font-size: 0.8rem;
   font-weight: 600;
@@ -158,7 +160,7 @@ header.top p {
 }
 
 .upload-btn:hover {
-  background: var(--ink-muted);
+  background: #2563eb;
 }
 
 .upload-btn.loading {
@@ -176,10 +178,10 @@ header.top p {
   border-radius: 4px;
 }
 
-/* Modificadores dinámicos para los estados de carga de Angular */
+/* Estados de carga en Dark Mode */
 .upload-status.exito { background: var(--state-bg-teal); color: var(--state-teal); }
 .upload-status.error { background: var(--state-bg-red); color: var(--state-red); }
-.upload-status.pendiente { background: #f1f5f9; color: var(--ink-muted); }
+.upload-status.pendiente { background: var(--border-color); color: var(--ink-muted); }
 
 /* ==========================================================================
    FILA DE INDICADORES (KPI CARD ROW)
@@ -196,7 +198,7 @@ header.top p {
   border-radius: 10px;
   padding: 20px;
   border: 1px solid var(--border-color);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -223,7 +225,6 @@ header.top p {
   color: var(--ink-dim);
 }
 
-/* Modificadores de color para los valores destacados del KPI */
 .kpi .value.teal { color: var(--state-teal); }
 .kpi .value.amber { color: var(--state-amber); }
 .kpi .value.red { color: var(--state-red); }
@@ -247,7 +248,7 @@ header.top p {
   border-radius: 12px;
   padding: 24px;
   border: 1px solid var(--border-color);
-  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.01), 0 2px 4px -1px rgba(0,0,0,0.01);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
 }
 
 .card h3 {
@@ -262,7 +263,7 @@ header.top p {
 .chart-wrap {
   position: relative;
   width: 100%;
-  height: 220px; /* Tamaño controlado para evitar desfases de Chart.js */
+  height: 220px;
 }
 
 .chart-wrap.tall {
@@ -270,7 +271,7 @@ header.top p {
 }
 
 /* ==========================================================================
-   TABLAS DE DATOS LOGÍSTICOS
+   TABLAS DE DATOS LOGÍSTICOS (Ajustadas para fondo oscuro)
    ========================================================================== */
 table {
   width: 100%;
@@ -280,14 +281,14 @@ table {
 }
 
 table thead tr {
-  background: #f1f5f9;
+  background: #1e293b; /* Encabezado oscuro */
   border-bottom: 2px solid var(--border-color);
 }
 
 table th {
   padding: 12px 14px;
   font-weight: 600;
-  color: var(--ink-muted);
+  color: var(--ink-main);
   text-transform: uppercase;
   font-size: 0.75rem;
   letter-spacing: 0.05em;
@@ -299,12 +300,12 @@ table tbody tr {
 }
 
 table tbody tr:hover {
-  background: #f8fafc;
+  background: rgba(255, 255, 255, 0.03); /* Efecto hover sutil */
 }
 
 table td {
   padding: 12px 14px;
-  color: var(--ink-main);
+  color: var(--ink-muted);
   vertical-align: middle;
 }
 
@@ -313,7 +314,7 @@ table td.name {
   color: var(--ink-main);
 }
 
-/* BADGES / PILLS DE RENDIMIENTO */
+/* BADGES / PILLS DE RENDIMIENTO VIAJE */
 .pill {
   display: inline-block;
   font-size: 0.75rem;
@@ -323,7 +324,6 @@ table td.name {
   text-align: center;
 }
 
-/* Clases de utilidad para inyectar mediante [ngClass] en las filas */
 .pill.cumple, .pill.teal-kpi { background: var(--state-bg-teal); color: var(--state-teal); }
 .pill.parcial, .pill.amber-kpi { background: var(--state-bg-amber); color: var(--state-amber); }
 .pill.nocumple, .pill.red-kpi { background: var(--state-bg-red); color: var(--state-red); }
