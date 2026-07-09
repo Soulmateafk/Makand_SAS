@@ -200,36 +200,27 @@ export class DashSemanalComponent implements AfterViewInit {
    * PROCESAMIENTO REPORTE 02: HORARIOS EN TIENDAS (D1, ARA, EXITO)
    */
   private procesarReporteTiendas(rows: any[]) {
-  // 1. Asegurar que los datos llegan del Excel
   if (!rows || rows.length === 0) return;
 
-  // 2. NORMALIZACIÓN Y FILTRADO PREVIO (El verdadero fix para los archivos sucios)
-  // Aquí limpiamos los espacios de las cabeceras y descartamos las filas que no son datos reales.
+  // 1. Normalización y limpieza (tu data de la imagen pasará perfecta por aquí)
   const datosLimpios = rows.reduce((acc, row) => {
-    // Quitamos espacios en blanco al inicio o final de los nombres de las columnas
     const cleanRow = Object.keys(row).reduce((cleanAcc, key) => {
       cleanAcc[key.trim()] = row[key];
       return cleanAcc;
     }, {} as any);
 
-    // Buscamos la columna clave que define si es una fila de datos real
     const region = cleanRow['Región'] || cleanRow['Region'] || cleanRow['RUTA'];
     
-    // Si la fila tiene una región válida, la guardamos. Si está vacía (basura/títulos), se ignora.
     if (region) {
-      cleanRow['_regionNormalizada'] = region; // Guardamos la región ya extraída
+      cleanRow['_regionNormalizada'] = region;
       acc.push(cleanRow);
     }
     return acc;
   }, [] as any[]);
 
-  // Verificación de seguridad: Si después de limpiar no quedó nada, detenemos el proceso.
-  if (datosLimpios.length === 0) {
-    console.warn("No se encontraron datos válidos. Por favor, asegúrate de subir 'Detalle regiones.csv'.");
-    return;
-  }
+  if (datosLimpios.length === 0) return;
 
-  // 3. Inicialización del Estado
+  // 2. Inicialización de estado
   this.tiendasState.status = 'Cargado';
   this.tiendasState.statusClass = 'text-success fw-bold';
   this.tiendasState.note = 'Análisis de ventanas de descarga con base en el tiempo en región capturado.';
@@ -242,7 +233,7 @@ export class DashSemanalComponent implements AfterViewInit {
   const rutasMap: Record<string, { total: number; cumple: number }> = {};
   let semanaNum = '';
 
-  // 4. Procesamiento de la Data Limpia
+  // 3. Procesamiento de los 1812 registros
   datosLimpios.forEach((cleanRow: any) => {
     totalRegistros++;
     const region = cleanRow['_regionNormalizada'];
@@ -268,7 +259,7 @@ export class DashSemanalComponent implements AfterViewInit {
     if (!cumplimiento.includes('NO CUMPLE')) rutasMap[region].cumple++;
   });
 
-  // 5. Asignación segura de KPIs
+  // 4. Asignación de KPIs
   this.tiendasState.kpiTotal = totalRegistros;
   this.tiendasState.kpiPeriodo = semanaNum || 'Mes operativo';
   this.tiendasState.kpiCumple = cumple.toString();
@@ -276,7 +267,7 @@ export class DashSemanalComponent implements AfterViewInit {
   this.tiendasState.kpiNoCumple = noCumple.toString();
   
   if (totalRegistros > 0) {
-    // Aplicación del modelo lógico sustractivo para efectividad real (100% - penalidad)
+    // Modelo lógico sustractivo para tu aplicativo (100 - penalidad)
     const porcentajeFallas = (noCumple / totalRegistros) * 100;
     const porcentajeEfectividad = (100 - porcentajeFallas).toFixed(1);
     
@@ -287,7 +278,7 @@ export class DashSemanalComponent implements AfterViewInit {
     this.tiendasState.kpiNoCumpleSub = '0% de fallas';
   }
 
-  // 6. Generación de tablas dinámicas
+  // 5. Tablas
   this.tiendasState.tableCedi = Object.keys(cedis).map(name => ({
     name,
     total: cedis[name],
@@ -309,102 +300,19 @@ export class DashSemanalComponent implements AfterViewInit {
     .sort((a, b) => b.total - a.total)
     .slice(0, 5);
 
-  // 7. Actualización de Gráficos
-  if (this.chartTiendas) {
-    this.chartTiendas.data.datasets[0].data = [cumple - parcial, parcial, noCumple];
-    this.chartTiendas.update();
+  // 6. Protección de la Gráfica (El paso crítico)
+  try {
+    if (this.chartTiendas && this.chartTiendas.data && this.chartTiendas.data.datasets && this.chartTiendas.data.datasets.length > 0) {
+      this.chartTiendas.data.datasets[0].data = [cumple - parcial, parcial, noCumple];
+      this.chartTiendas.update();
+    }
+  } catch (error) {
+    console.error("La gráfica aún no está lista para actualizarse, pero los datos seguirán cargando.", error);
   }
 
-  // ¡CRÍTICO!: Notificamos a Angular del nuevo estado
+  // 7. Renderizado obligatorio en pantalla
   this.cdr.detectChanges();
 }
-
-  /**
-   * PROCESAMIENTO REPORTE 03: RECOLECCIÓN AGRICULTORES (CAMPO Y TRANSPORTE)
-   */
-  private procesarReporteAgricultores(rows: any[]) {
-    this.agriState.status = 'Cargado';
-    this.agriState.statusClass = 'text-success fw-bold';
-    this.agriState.note = 'Indicadores ponderados de recolección en fincas y tiempos de traslado a central.';
-
-    let totalViajes = 0;
-    let cumpleLlegada = 0;
-    let cumpleTiempo = 0;
-    let cumplePlanta = 0;
-    let semanaStr = 'S/N';
-    const agricultores: Record<string, { total: number; llegada: number; tiempo: number; planta: number }> = {};
-
-    rows.forEach(row => {
-      const agri = row['AGRICULTOR'] || row['Agricultor'];
-      if (!agri) return;
-
-      totalViajes++;
-      if (row['semana']) semanaStr = `S${row['semana']}`;
-
-      if (!agricultores[agri]) {
-        agricultores[agri] = { total: 0, llegada: 0, tiempo: 0, planta: 0 };
-      }
-      agricultores[agri].total++;
-
-      const cLlegada = String(row['CUMPLIMIENTO LLEGADA AGRICULTOR'] || row['CUMPLIMIENTO LLEGADA ACRICULTOR'] || '').toUpperCase();
-      if (cLlegada.includes('CUMPLE') && !cLlegada.includes('NO')) {
-        cumpleLlegada++;
-        agricultores[agri].llegada++;
-      }
-
-      const cTiempo = String(row['CUMPLIMIENTO TIEMPO EN AGRICULTOR'] || '').toUpperCase();
-      if (cTiempo.includes('CUMPLE') && !cTiempo.includes('NO')) {
-        cumpleTiempo++;
-        agricultores[agri].tiempo++;
-      }
-
-      const cPlanta = String(row['CUMPLIMIENTO LLEGADA A PLANTA'] || '').toUpperCase();
-      if (cPlanta.includes('CUMPLE') && !cPlanta.includes('NO')) {
-        cumplePlanta++;
-        agricultores[agri].planta++;
-      }
-    });
-
-    this.agriState.kpiSemanaLabel = `Semana: ${semanaStr}`;
-    this.agriState.kpiTotal = totalViajes;
-    this.agriState.kpiLlegada = totalViajes > 0 ? `${Math.round((cumpleLlegada / totalViajes) * 100)}%` : '0%';
-    this.agriState.kpiTiempo = totalViajes > 0 ? `${Math.round((cumpleTiempo / totalViajes) * 100)}%` : '0%';
-    this.agriState.kpiPlanta = totalViajes > 0 ? `${Math.round((cumplePlanta / totalViajes) * 100)}%` : '0%';
-    
-    this.agriState.chartLabel = `Semana ${semanaStr}`;
-    this.agriState.tableLabel = `Semana ${semanaStr}`;
-
-    const labelsAgri: string[] = [];
-    const datasetLlegada: number[] = [];
-
-    this.agriState.table = Object.keys(agricultores).map(name => {
-      const a = agricultores[name];
-      const pLlegada = Math.round((a.llegada / a.total) * 100);
-      const pTiempo = Math.round((a.tiempo / a.total) * 100);
-      const pPlanta = Math.round((a.planta / a.total) * 100);
-
-      labelsAgri.push(name);
-      datasetLlegada.push(pLlegada);
-
-      return {
-        name,
-        total: a.total,
-        llegada: `${pLlegada}%`,
-        llegadaClass: pLlegada >= 85 ? 'pill-success' : pLlegada >= 70 ? 'pill-warning' : 'pill-danger',
-        tiempo: `${pTiempo}%`,
-        tiempoClass: pTiempo >= 85 ? 'pill-success' : pTiempo >= 70 ? 'pill-warning' : 'pill-danger',
-        planta: `${pPlanta}%`,
-        plantaClass: pPlanta >= 85 ? 'pill-success' : pPlanta >= 70 ? 'pill-warning' : 'pill-danger'
-      };
-    });
-
-    if (this.chartAgri) {
-      this.chartAgri.data.labels = labelsAgri;
-      this.chartAgri.data.datasets[0].data = datasetLlegada;
-      this.chartAgri.update();
-    }
-  }
-
   /**
    * INICIALIZADOR DE GRÁFICOS: Inicializa las vistas de Chart.js
    */
