@@ -313,6 +313,77 @@ export class DashSemanalComponent implements AfterViewInit {
   // 7. Renderizado obligatorio en pantalla
   this.cdr.detectChanges();
 }
+
+private procesarReporteAgricultores(rows: any[]) {
+  // 1. Validar que lleguen datos
+  if (!rows || rows.length === 0) return;
+
+  // 2. Normalización de cabeceras (Elimina espacios como 'CAJAS ENTREGADAS ')
+  const datosLimpios = rows.reduce((acc, row) => {
+    const cleanRow = Object.keys(row).reduce((cleanAcc, key) => {
+      cleanAcc[key.trim()] = row[key];
+      return cleanAcc;
+    }, {} as any);
+
+    // Filtro por columna obligatoria
+    const agricultor = cleanRow['AGRICULTOR'] || cleanRow['Agricultor'];
+    if (agricultor) {
+      cleanRow['_agricultorNormalizado'] = agricultor;
+      acc.push(cleanRow);
+    }
+    return acc;
+  }, [] as any[]);
+
+  if (datosLimpios.length === 0) return;
+
+  // 3. Inicialización del estado de agricultores
+  // (Asegúrate de que 'agricultoresState' esté declarado en tu componente)
+  if (this.agricultoresState) {
+    this.agricultoresState.status = 'Cargado';
+    this.agricultoresState.statusClass = 'text-success fw-bold';
+    this.agricultoresState.note = 'Análisis de flujo de canastillas por productor agrícola.';
+  }
+
+  let totalEntregadas = 0;
+  let totalRecogidas = 0;
+  const agriMap: Record<string, { entregadas: number; recogidas: number }> = {};
+
+  // 4. Procesamiento y acumulación de canastillas
+  datosLimpios.forEach((cleanRow: any) => {
+    const nombre = cleanRow['_agricultorNormalizado'];
+    
+    // Convertir de forma segura a número (por si vienen como string en el Excel)
+    const entregadas = parseInt(cleanRow['CAJAS ENTREGADAS'] || '0', 10) || 0;
+    const recogidas = parseInt(cleanRow['CAJAS RECOGIDAS'] || '0', 10) || 0;
+
+    totalEntregadas += entregadas;
+    totalRecogidas += recogidas;
+
+    if (!agriMap[nombre]) {
+      agriMap[nombre] = { entregadas: 0, recogidas: 0 };
+    }
+    agriMap[nombre].entregadas += entregadas;
+    agriMap[nombre].recogidas += recogidas;
+  });
+
+  // 5. Asignación de KPIs globales al estado
+  if (this.agricultoresState) {
+    this.agricultoresState.kpiTotalEntregadas = totalEntregadas;
+    this.agricultoresState.kpiTotalRecogidas = totalRecogidas;
+
+    // Generar mapeo para tablas o listados ordenados por mayor entrega
+    this.agricultoresState.tableAgricultores = Object.keys(agriMap).map(name => ({
+      name,
+      entregadas: agriMap[name].entregadas,
+      recogidas: agriMap[name].recogidas,
+      totalFlujo: agriMap[name].entregadas + agriMap[name].recogidas
+    }))
+    .sort((a, b) => b.entregadas - a.entregadas);
+  }
+
+  // 6. Forzar renderizado en la interfaz de Angular
+  this.cdr.detectChanges();
+}
   /**
    * PROCESAMIENTO REPORTE 03: RECOLECCIÓN AGRICULTORES (CAMPO Y TRANSPORTE)
    */
@@ -326,6 +397,7 @@ export class DashSemanalComponent implements AfterViewInit {
     let cumpleTiempo = 0;
     let cumplePlanta = 0;
     let semanaStr = 'S/N';
+    
     const agricultores: Record<string, { total: number; llegada: number; tiempo: number; planta: number }> = {};
 
     rows.forEach(row => {
