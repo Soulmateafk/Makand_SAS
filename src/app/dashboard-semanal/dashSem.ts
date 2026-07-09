@@ -314,6 +314,92 @@ export class DashSemanalComponent implements AfterViewInit {
   this.cdr.detectChanges();
 }
   /**
+   * PROCESAMIENTO REPORTE 03: RECOLECCIÓN AGRICULTORES (CAMPO Y TRANSPORTE)
+   */
+  private procesarReporteAgricultores(rows: any[]) {
+    this.agriState.status = 'Cargado';
+    this.agriState.statusClass = 'text-success fw-bold';
+    this.agriState.note = 'Indicadores ponderados de recolección en fincas y tiempos de traslado a central.';
+
+    let totalViajes = 0;
+    let cumpleLlegada = 0;
+    let cumpleTiempo = 0;
+    let cumplePlanta = 0;
+    let semanaStr = 'S/N';
+    const agricultores: Record<string, { total: number; llegada: number; tiempo: number; planta: number }> = {};
+
+    rows.forEach(row => {
+      const agri = row['AGRICULTOR'] || row['Agricultor'];
+      if (!agri) return;
+
+      totalViajes++;
+      if (row['semana']) semanaStr = `S${row['semana']}`;
+
+      if (!agricultores[agri]) {
+        agricultores[agri] = { total: 0, llegada: 0, tiempo: 0, planta: 0 };
+      }
+      agricultores[agri].total++;
+
+      const cLlegada = String(row['CUMPLIMIENTO LLEGADA AGRICULTOR'] || row['CUMPLIMIENTO LLEGADA ACRICULTOR'] || '').toUpperCase();
+      if (cLlegada.includes('CUMPLE') && !cLlegada.includes('NO')) {
+        cumpleLlegada++;
+        agricultores[agri].llegada++;
+      }
+
+      const cTiempo = String(row['CUMPLIMIENTO TIEMPO EN AGRICULTOR'] || '').toUpperCase();
+      if (cTiempo.includes('CUMPLE') && !cTiempo.includes('NO')) {
+        cumpleTiempo++;
+        agricultores[agri].tiempo++;
+      }
+
+      const cPlanta = String(row['CUMPLIMIENTO LLEGADA A PLANTA'] || '').toUpperCase();
+      if (cPlanta.includes('CUMPLE') && !cPlanta.includes('NO')) {
+        cumplePlanta++;
+        agricultores[agri].planta++;
+      }
+    });
+
+    this.agriState.kpiSemanaLabel = `Semana: ${semanaStr}`;
+    this.agriState.kpiTotal = totalViajes;
+    this.agriState.kpiLlegada = totalViajes > 0 ? `${Math.round((cumpleLlegada / totalViajes) * 100)}%` : '0%';
+    this.agriState.kpiTiempo = totalViajes > 0 ? `${Math.round((cumpleTiempo / totalViajes) * 100)}%` : '0%';
+    this.agriState.kpiPlanta = totalViajes > 0 ? `${Math.round((cumplePlanta / totalViajes) * 100)}%` : '0%';
+    
+    this.agriState.chartLabel = `Semana ${semanaStr}`;
+    this.agriState.tableLabel = `Semana ${semanaStr}`;
+
+    const labelsAgri: string[] = [];
+    const datasetLlegada: number[] = [];
+
+    this.agriState.table = Object.keys(agricultores).map(name => {
+      const a = agricultores[name];
+      const pLlegada = Math.round((a.llegada / a.total) * 100);
+      const pTiempo = Math.round((a.tiempo / a.total) * 100);
+      const pPlanta = Math.round((a.planta / a.total) * 100);
+
+      labelsAgri.push(name);
+      datasetLlegada.push(pLlegada);
+
+      return {
+        name,
+        total: a.total,
+        llegada: `${pLlegada}%`,
+        llegadaClass: pLlegada >= 85 ? 'pill-success' : pLlegada >= 70 ? 'pill-warning' : 'pill-danger',
+        tiempo: `${pTiempo}%`,
+        tiempoClass: pTiempo >= 85 ? 'pill-success' : pTiempo >= 70 ? 'pill-warning' : 'pill-danger',
+        planta: `${pPlanta}%`,
+        plantaClass: pPlanta >= 85 ? 'pill-success' : pPlanta >= 70 ? 'pill-warning' : 'pill-danger'
+      };
+    });
+
+    if (this.chartAgri) {
+      this.chartAgri.data.labels = labelsAgri;
+      this.chartAgri.data.datasets[0].data = datasetLlegada;
+      this.chartAgri.update();
+    }
+  }
+
+  /**
    * INICIALIZADOR DE GRÁFICOS: Inicializa las vistas de Chart.js
    */
   private inicializarGraficosVacios() {
