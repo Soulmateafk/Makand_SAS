@@ -12,7 +12,7 @@ import { AlertasComponent } from './pages/alertas/alertas';
 import { CombustibleComponent } from './components/combustible/combustible';
 import { MapaEntregasComponent } from './pages1/mapa-entregas/mapa-entregas';
 import { DashexcComponent } from './dasboardexcel/dashexc';
-import { DashSemanalComponent, dashSem } from './dashboard-semanal/dash-semanal';
+import { DashSemanalComponent } from './dashboard-semanal/dash-semanal.component';
 
 // IMPORTAMOS EL GUARDIA QUE CREAMOS
 import { authGuard } from './login/auth.guard';
