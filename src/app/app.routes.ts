@@ -12,7 +12,7 @@ import { AlertasComponent } from './pages/alertas/alertas';
 import { CombustibleComponent } from './components/combustible/combustible';
 import { MapaEntregasComponent } from './pages1/mapa-entregas/mapa-entregas';
 import { DashexcComponent } from './dasboardexcel/dashexc';
-import { DashSemanalComponent } from './dashboard-semanal/dashSem';
+import { ReporteSemanalComponent } from './reporte-semanal/reporte-semanal.component';
 
 // IMPORTAMOS EL GUARDIA QUE CREAMOS
 import { authGuard } from './login/auth.guard';
@@ -33,5 +33,5 @@ export const routes: Routes = [
   { path: 'combustible', component: CombustibleComponent, canActivate: [authGuard] },
   { path: 'mapa', component: MapaEntregasComponent, canActivate: [authGuard] },
   { path: 'dash-entregas', component: DashexcComponent, canActivate: [authGuard] },
-  { path: 'dashSem', component: DashSemanalComponent, canActivate: [authGuard] }
+  { path: 'reporte-semanal', component: reporteComponent, canActivate: [authGuard] }
 ];

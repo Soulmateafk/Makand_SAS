@@ -1,0 +1,285 @@
+<!--
+  reporte-semanal.component.html
+  Misma dinámica que la versión standalone: 3 secciones (Makand / Tiendas / Agricultores),
+  cada una con botón "Actualizar archivo", resumen mensual, tendencia semanal y detalle
+  de la semana más reciente (sin importar si está en curso).
+-->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+*/
+
+<header class="top">
+  <div class="headline">
+    <div class="eyebrow">Reporte semanal · Operaciones logísticas</div>
+    <h1>Semana a semana</h1>
+    <p>Tres reportes consolidados: viajes por transportadora hacia planta Makand, cumplimiento de horarios en tiendas y cumplimiento de recogida en agricultores. Vista semanal y mensual, actualizables subiendo el Excel más reciente.</p>
+  </div>
+</header>
+
+<!-- ======================= SECCIÓN 1: MAKAND ======================= -->
+<section class="section">
+  <div class="section-head">
+    <span class="week-tab">SEM {{ makand().week }}</span>
+    <h2>Viajes por transportadora — Planta Makand</h2>
+    <div class="upload-box">
+      <span class="src">{{ fuenteMakand() }}</span>
+      <button class="upload-btn" (click)="fileMakand.click()">Actualizar archivo</button>
+      <input #fileMakand type="file" accept=".xlsx,.xls" style="display:none" (change)="onFileSelected($event, 'makand')">
+      <span class="upload-status" [class.ok]="statusMakand().cls==='ok'" [class.err]="statusMakand().cls==='err'">{{ statusMakand().msg }}</span>
+    </div>
+  </div>
+
+  <p class="section-note">
+    {{ makand().total }} viajes registrados en la semana {{ makand().week }}, repartidos entre {{ makand().transportadoras.length }} transportadora(s).
+    Los % de cumplimiento de llegada corresponden a la llegada del vehículo a planta según la hora citada.
+  </p>
+
+  <div class="kpi-row">
+    <div class="kpi">
+      <div class="label">Viajes totales</div>
+      <div class="value">{{ makand().total }}</div>
+      <div class="sub">semana {{ makand().week }}</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Cumplimiento llegada</div>
+      <div class="value green">{{ fmt(makand().overallLlegada) }}</div>
+      <div class="sub">promedio general</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Cajas movilizadas</div>
+      <div class="value">{{ makand().totalCajas | number:'1.0-0' }}</div>
+      <div class="sub">{{ makand().transportadoras.join('+') }}</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Transportadora líder</div>
+      <div class="value ochre">{{ makand().lider }}</div>
+      <div class="sub">{{ fmt(makand().liderPct) }} de los viajes</div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:24px;" *ngIf="makand().monthly as m">
+    <h3>Resumen mensual — viajes y cumplimiento de llegada</h3>
+    <div class="chart-wrap" style="height:260px;"><canvas #chartMakandMes></canvas></div>
+    <table style="margin-top:16px;">
+      <thead><tr><th>Mes</th><th>Viajes</th><th>% Cumple llegada</th><th>Estado</th></tr></thead>
+      <tbody>
+        <tr *ngFor="let mes of m.meses; let i = index">
+          <td class="name">{{ nombreMes(mes) }}</td>
+          <td>{{ m.total[i] }}</td>
+          <td>{{ fmt(m.pct[i]) }}</td>
+          <td>
+            <span class="pill mid" *ngIf="esMesActual(mes)">En curso</span>
+            <span class="pill good" *ngIf="!esMesActual(mes)">Cerrado</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card" style="margin-bottom:24px;">
+    <h3>Evolución semanal — viajes y cumplimiento de llegada</h3>
+    <div class="chart-wrap" style="height:280px;"><canvas #chartMakandTrend></canvas></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h3>Viajes por transportadora <span>(semana {{ makand().week }})</span></h3>
+      <div class="chart-wrap"><canvas #chartTransp></canvas></div>
+    </div>
+    <div class="card">
+      <h3>Detalle por transportadora <span>(semana {{ makand().week }})</span></h3>
+      <table>
+        <thead><tr><th>Transportadora</th><th>Viajes</th><th>% del total</th><th>Cumple llegada</th><th>Cumple cargue</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let t of makand().transportadoras; let i = index">
+            <td class="name"><span class="legend-dot" [style.background]="PALETTE[i % PALETTE.length]"></span>{{ t }}</td>
+            <td>{{ makand().transpMap[t].total }}</td>
+            <td>{{ fmt(makand().transpMap[t].total / makand().total * 100) }}</td>
+            <td><span class="pill" [ngClass]="pillClass(makand().transpMap[t].llegadaOk / makand().transpMap[t].total * 100)">
+              {{ fmt(makand().transpMap[t].llegadaOk / makand().transpMap[t].total * 100) }}
+            </span></td>
+            <td><span class="pill" [ngClass]="pillClass(makand().transpMap[t].cargueOk / makand().transpMap[t].total * 100)">
+              {{ fmt(makand().transpMap[t].cargueOk / makand().transpMap[t].total * 100) }}
+            </span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= SECCIÓN 2: TIENDAS ======================= -->
+<section class="section">
+  <div class="section-head">
+    <span class="week-tab">SEM {{ tiendas().week }}</span>
+    <h2>Cumplimiento de horarios — Tiendas</h2>
+    <div class="upload-box">
+      <span class="src">{{ fuenteTiendas() }}</span>
+      <button class="upload-btn" (click)="fileTiendas.click()">Actualizar archivo</button>
+      <input #fileTiendas type="file" accept=".xlsx,.xls" style="display:none" (change)="onFileSelected($event, 'tiendas')">
+      <span class="upload-status" [class.ok]="statusTiendas().cls==='ok'" [class.err]="statusTiendas().cls==='err'">{{ statusTiendas().msg }}</span>
+    </div>
+  </div>
+
+  <p class="section-note">
+    {{ tiendas().total }} registros de llegada/salida en ruta durante la semana {{ tiendas().week }}.
+    El cumplimiento mide si el vehículo permaneció en el punto dentro del tiempo estándar asignado.
+  </p>
+
+  <div class="kpi-row">
+    <div class="kpi">
+      <div class="label">Registros de ruta</div>
+      <div class="value">{{ tiendas().total }}</div>
+      <div class="sub">semana {{ tiendas().week }}</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Cumple</div>
+      <div class="value green">{{ fmt((tiendas().dist['CUMPLE'] || 0) / tiendas().total * 100) }}</div>
+      <div class="sub">{{ tiendas().dist['CUMPLE'] || 0 }} registros</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Cumple parcial</div>
+      <div class="value ochre">{{ fmt((tiendas().dist['CUMPLE PARCIAL'] || 0) / tiendas().total * 100) }}</div>
+      <div class="sub">{{ tiendas().dist['CUMPLE PARCIAL'] || 0 }} registros</div>
+    </div>
+    <div class="kpi">
+      <div class="label">No cumple</div>
+      <div class="value brick">{{ fmt((tiendas().dist['NO CUMPLE'] || 0) / tiendas().total * 100) }}</div>
+      <div class="sub">{{ tiendas().dist['NO CUMPLE'] || 0 }} registros</div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:24px;" *ngIf="tiendas().monthly as m">
+    <h3>Resumen mensual — registros y % cumplimiento</h3>
+    <div class="chart-wrap" style="height:260px;"><canvas #chartTiendasMes></canvas></div>
+    <table style="margin-top:16px;">
+      <thead><tr><th>Mes</th><th>Registros</th><th>% Cumple</th><th>Estado</th></tr></thead>
+      <tbody>
+        <tr *ngFor="let mes of m.meses; let i = index">
+          <td class="name">{{ nombreMes(mes) }}</td>
+          <td>{{ m.total[i] }}</td>
+          <td>{{ fmt(m.pct[i]) }}</td>
+          <td>
+            <span class="pill mid" *ngIf="esMesActual(mes)">En curso</span>
+            <span class="pill good" *ngIf="!esMesActual(mes)">Cerrado</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card" style="margin-bottom:24px;">
+    <h3>Evolución semanal — % de cumplimiento</h3>
+    <div class="chart-wrap" style="height:280px;"><canvas #chartTiendasTrend></canvas></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h3>Distribución de cumplimiento <span>(semana {{ tiendas().week }})</span></h3>
+      <div class="chart-wrap"><canvas #chartTiendas></canvas></div>
+    </div>
+    <div class="card">
+      <h3>Cumplimiento por CEDI <span>(semana {{ tiendas().week }})</span></h3>
+      <table>
+        <thead><tr><th>CEDI</th><th>Registros</th><th>Participación</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let cd of tiendas().cedis">
+            <td class="name">{{ cd }}</td>
+            <td>{{ tiendas().cediMap[cd] }}</td>
+            <td>{{ fmt(tiendas().cediMap[cd] / tiendas().total * 100) }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3 style="margin-top:22px;">Rutas con más registros <span>(semana {{ tiendas().week }})</span></h3>
+      <table>
+        <thead><tr><th>Ruta / región</th><th>Registros</th><th>% Cumple</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let rg of tiendas().topRegiones">
+            <td class="name">{{ rg }}</td>
+            <td>{{ tiendas().regionMap[rg].total }}</td>
+            <td><span class="pill" [ngClass]="pillClass(tiendas().regionMap[rg].cumple / tiendas().regionMap[rg].total * 100)">
+              {{ fmt(tiendas().regionMap[rg].cumple / tiendas().regionMap[rg].total * 100) }}
+            </span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= SECCIÓN 3: AGRICULTORES ======================= -->
+<section class="section">
+  <div class="section-head">
+    <span class="week-tab">SEM {{ agri().weekLabel }}</span>
+    <h2>Cumplimiento de recogida — Agricultores</h2>
+    <div class="upload-box">
+      <span class="src">{{ fuenteAgri() }}</span>
+      <button class="upload-btn" (click)="fileAgri.click()">Actualizar archivo</button>
+      <input #fileAgri type="file" accept=".xlsx,.xls" style="display:none" (change)="onFileSelected($event, 'agri')">
+      <span class="upload-status" [class.ok]="statusAgri().cls==='ok'" [class.err]="statusAgri().cls==='err'">{{ statusAgri().msg }}</span>
+    </div>
+  </div>
+
+  <p class="section-note">
+    Cumplimiento semanal por agricultor en tres momentos del proceso: llegada del transporte, tiempo en finca y llegada a planta.
+    Este archivo no trae columna de mes, por lo que aquí solo se ve la evolución semana a semana.
+  </p>
+
+  <div class="kpi-row">
+    <div class="kpi">
+      <div class="label">Viajes semana {{ agri().weekLabel }}</div>
+      <div class="value">{{ agri().totalViajes }}</div>
+      <div class="sub">{{ agri().agricultores.length }} agricultores</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Cumple llegada</div>
+      <div class="value ochre">{{ fmt(agri().avgLlegada) }}</div>
+      <div class="sub">promedio ponderado</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Cumple tiempo en finca</div>
+      <div class="value brick">{{ fmt(agri().avgTiempo) }}</div>
+      <div class="sub">promedio ponderado</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Cumple llegada a planta</div>
+      <div class="value brick">{{ fmt(agri().avgPlanta) }}</div>
+      <div class="sub">promedio ponderado</div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:24px;">
+    <h3>Evolución semanal — % cumplimiento por etapa</h3>
+    <div class="chart-wrap" style="height:280px;"><canvas #chartAgriTrend></canvas></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h3>Cumplimiento de llegada por agricultor <span>(S{{ agri().weekLabel }})</span></h3>
+      <div class="chart-wrap"><canvas #chartAgri></canvas></div>
+    </div>
+    <div class="card">
+      <h3>Detalle por agricultor — <span>semana {{ agri().weekLabel }}</span></h3>
+      <table>
+        <thead><tr><th>Agricultor</th><th>Viajes</th><th>Llegada</th><th>Tiempo finca</th><th>Llegada planta</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let a of agri().agricultores">
+            <td class="name">{{ a.name }}</td>
+            <td>{{ a.viajes }}</td>
+            <td><span class="pill" [ngClass]="pillClass(a.pctLlegada)">{{ fmt(a.pctLlegada) }}</span></td>
+            <td><span class="pill" [ngClass]="pillClass(a.pctTiempo)">{{ fmt(a.pctTiempo) }}</span></td>
+            <td><span class="pill" [ngClass]="pillClass(a.pctPlanta)">{{ fmt(a.pctPlanta) }}</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<footer>
+  Reporte generado a partir de 3 archivos Excel proporcionados. Ningún archivo original fue modificado. ·
+  Los datos se agrupan por semana (columna SEMANA / SEMANAS de cada archivo), mostrando siempre la semana más
+  reciente disponible, esté o no en curso.
+</footer>
