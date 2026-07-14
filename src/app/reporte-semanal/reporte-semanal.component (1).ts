@@ -399,14 +399,20 @@ export class ReporteSemanalComponent implements AfterViewInit {
     if (!sheetName) throw new Error('No encontré la hoja "RESUMEN" en este archivo.');
     const rows = this.sheetRows(wb, sheetName);
 
-    let headerRow = -1;
-    for (let i = 0; i < rows.length; i++) {
-      if (rows[i] && String(rows[i][1] || '').trim().toUpperCase() === 'AGRICULTOR') { headerRow = i; break; }
+    const norm = (v: any): string => String(v == null ? '' : v).replace(/[\u00A0\u200B]/g, ' ').trim().toUpperCase();
+
+    let headerRow = -1, headerCol = -1;
+    for (let i = 0; i < rows.length && headerRow < 0; i++) {
+      const row = rows[i];
+      if (!row) continue;
+      for (let c = 0; c < row.length; c++) {
+        if (norm(row[c]) === 'AGRICULTOR') { headerRow = i; headerCol = c; break; }
+      }
     }
-    if (headerRow < 0) throw new Error('No encontré la tabla "Agricultor" en la hoja RESUMEN.');
+    if (headerRow < 0) throw new Error('No encontré la tabla "Agricultor" en la hoja RESUMEN. Puede que la hoja haya cambiado de estructura.');
     const weekRow = rows[headerRow + 1];
     const weekCols: number[] = [];
-    for (let c = 3; c < weekRow.length; c++) {
+    for (let c = headerCol + 2; c < weekRow.length; c++) {
       if (weekRow[c] !== null && weekRow[c] !== undefined && weekRow[c] !== '') weekCols.push(c);
     }
     if (!weekCols.length) throw new Error('No encontré columnas de semana (S..) en RESUMEN.');
@@ -430,7 +436,7 @@ export class ReporteSemanalComponent implements AfterViewInit {
     const blockStarts: number[] = [];
     let r = headerRow + 2;
     while (r < rows.length) {
-      const name = rows[r] && rows[r][1];
+      const name = rows[r] && rows[r][headerCol];
       if (!name) break;
       blockStarts.push(r);
       const totalViajes = rows[r][lastWeekCol];
