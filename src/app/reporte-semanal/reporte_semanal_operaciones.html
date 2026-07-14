@@ -1,451 +1,273 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<title>Reporte Semanal de Operaciones</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-<style>
-  :root{
-    --bg: #1e124c;
-    --panel: #3e286e;
-    --panel-2: #233e66;
-    --line: #2a1951;
-    --ink: #2B2620;
-    --ink-dim: #8B7E6C;
-    --green: #2F6F4E;
-    --green-bg: rgba(47,111,78,.10);
-    --ochre: #BE8A2E;
-    --ochre-bg: rgba(190,138,46,.13);
-    --brick: #B5453A;
-    --brick-bg: rgba(181,69,58,.11);
-    --navy: #223A57;
-    --font-display: 'Fraunces', serif;
-    --font-body: 'Inter', sans-serif;
-    --font-mono: 'Space Mono', monospace;
-  }
-  *{box-sizing:border-box; margin:0; padding:0;}
-  body{
-    background:var(--bg);
-    background-image: repeating-linear-gradient(180deg, transparent 0 39px, rgba(43,38,32,0.035) 39px 40px);
-    color:var(--ink);
-    font-family:var(--font-body);
-    line-height:1.45;
-    padding-bottom:50px;
-  }
-  header.top{
-    padding:44px 6vw 30px;
-    border-bottom:2px solid var(--ink);
-    display:flex;
-    justify-content:space-between;
-    align-items:flex-end;
-    gap:24px;
-    flex-wrap:wrap;
-  }
-  header.top .headline .eyebrow{
-    font-family:var(--font-mono);
-    font-size:12px;
-    letter-spacing:.14em;
-    text-transform:uppercase;
-    color:var(--navy);
-  }
-  header.top h1{
-    font-family:var(--font-display);
-    font-weight:600;
-    font-size:clamp(30px,4.2vw,50px);
-    margin-top:8px;
-    color:var(--ink);
-  }
-  header.top p{
-    color:var(--ink-dim);
-    margin-top:10px;
-    max-width:560px;
-    font-size:14.5px;
-  }
-  .week-dial{
-    display:flex;
-    flex-direction:column;
-    align-items:flex-end;
-    gap:8px;
-  }
-  .week-dial .days{
-    display:flex;
-    gap:5px;
-  }
-  .week-dial .days span{
-    width:9px; height:9px; border-radius:50%;
-    background:var(--line);
-    display:inline-block;
-  }
-  .week-dial .days span.on{ background:var(--green); }
-  .week-dial .caption{
-    font-family:var(--font-mono);
-    font-size:10.5px;
-    color:var(--ink-dim);
-    letter-spacing:.05em;
-  }
-
-  .section{
-    padding:48px 6vw;
-    border-bottom:1px solid var(--line);
-  }
-  .section:last-of-type{border-bottom:none;}
-
-  .section-head{
-    display:flex;
-    align-items:center;
-    gap:18px;
-    margin-bottom:26px;
-    flex-wrap:wrap;
-  }
-  .week-tab{
-    font-family:var(--font-mono);
-    font-size:13px;
-    font-weight:700;
-    color:var(--panel);
-    background:var(--navy);
-    padding:6px 13px;
-    border-radius:3px 3px 8px 3px;
-    position:relative;
-    letter-spacing:.03em;
-  }
-  .section-head h2{
-    font-family:var(--font-display);
-    font-weight:600;
-    font-size:clamp(21px,2.4vw,29px);
-  }
-  .upload-box{
-    margin-left:auto;
-    display:flex;
-    align-items:center;
-    gap:10px;
-    flex-wrap:wrap;
-  }
-  .src{
-    font-family:var(--font-mono);
-    font-size:11px;
-    color:var(--ink-dim);
-  }
-  .upload-btn{
-    font-family:var(--font-body);
-    font-size:12.5px;
-    font-weight:600;
-    color:var(--panel);
-    background:var(--ink);
-    border:none;
-    padding:8px 16px;
-    border-radius:20px;
-    cursor:pointer;
-    white-space:nowrap;
-  }
-  .upload-btn:hover{ background:var(--navy); }
-  .upload-status{
-    font-family:var(--font-mono);
-    font-size:11px;
-    color:var(--ink-dim);
-  }
-  .upload-status.ok{color:var(--green);}
-  .upload-status.err{color:var(--brick);}
-
-  .section-note{
-    font-size:13.5px;
-    color:var(--ink-dim);
-    margin-bottom:26px;
-    max-width:720px;
-  }
-
-  .kpi-row{
-    display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
-    gap:16px;
-    margin-bottom:30px;
-  }
-  .kpi{
-    background:var(--panel);
-    border:1px solid var(--line);
-    border-left:3px solid var(--navy);
-    border-radius:4px;
-    padding:16px 18px;
-  }
-  .kpi .label{
-    font-family:var(--font-mono);
-    font-size:10.5px;
-    letter-spacing:.06em;
-    text-transform:uppercase;
-    color:var(--ink-dim);
-  }
-  .kpi .value{
-    font-family:var(--font-display);
-    font-weight:600;
-    font-size:clamp(24px,2.6vw,33px);
-    margin-top:4px;
-    color:var(--ink);
-  }
-  .kpi .sub{
-    font-size:11.5px;
-    color:var(--ink-dim);
-    margin-top:2px;
-    font-family:var(--font-mono);
-  }
-  .green{color:var(--green);}
-  .ochre{color:var(--ochre);}
-  .brick{color:var(--brick);}
-
-  .grid-2{
-    display:grid;
-    grid-template-columns:1.05fr 1fr;
-    gap:24px;
-  }
-  @media (max-width:880px){ .grid-2{grid-template-columns:1fr;} }
-
-  .card{
-    background:var(--panel);
-    border:1px solid var(--line);
-    border-radius:6px;
-    padding:22px 24px;
-  }
-  .card h3{
-    font-family:var(--font-display);
-    font-weight:600;
-    font-size:15.5px;
-    color:var(--ink);
-    margin-bottom:16px;
-  }
-  .chart-wrap{position:relative; height:250px;}
-
-  table{ width:100%; border-collapse:collapse; font-size:13px; }
-  th{
-    text-align:left;
-    font-family:var(--font-mono);
-    font-size:10px;
-    letter-spacing:.05em;
-    text-transform:uppercase;
-    color:var(--ink-dim);
-    padding:8px 10px;
-    border-bottom:2px solid var(--ink);
-  }
-  td{
-    padding:9px 10px;
-    border-bottom:1px solid var(--line);
-  }
-  td.name{font-weight:600;}
-  tr:last-child td{border-bottom:none;}
-  .pill{
-    display:inline-block;
-    padding:2px 10px;
-    border-radius:3px;
-    font-size:11px;
-    font-family:var(--font-mono);
-    font-weight:700;
-  }
-  .pill.good{background:var(--green-bg); color:var(--green);}
-  .pill.mid{background:var(--ochre-bg); color:var(--ochre);}
-  .pill.bad{background:var(--brick-bg); color:var(--brick);}
-  .legend-dot{ display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px; }
-
-  footer{
-    padding:30px 6vw 10px;
-    font-family:var(--font-mono);
-    font-size:11px;
-    color:var(--ink-dim);
-  }
-</style>
-</head>
-<body>
+<!--
+  reporte-semanal.component.html
+  Misma dinámica que la versión standalone: 3 secciones (Makand / Tiendas / Agricultores),
+  cada una con botón "Actualizar archivo", resumen mensual, tendencia semanal y detalle
+  de la semana más reciente (sin importar si está en curso).
+-->
 
 <header class="top">
   <div class="headline">
     <div class="eyebrow">Reporte semanal · Operaciones logísticas</div>
     <h1>Semana a semana</h1>
-    <p>Tres reportes consolidados por semana: viajes por transportadora hacia planta Makand, cumplimiento de horarios en tiendas y cumplimiento de recogida en agricultores.</p>
-  </div>
-  <div class="week-dial">
-    <div class="days" id="weekDots">
-      <span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span><span></span><span></span>
-    </div>
-    <div class="caption">L &nbsp;M &nbsp;M &nbsp;J &nbsp;V &nbsp;S &nbsp;D</div>
+    <p>Tres reportes consolidados: viajes por transportadora hacia planta Makand, cumplimiento de horarios en tiendas y cumplimiento de recogida en agricultores. Vista semanal y mensual, actualizables subiendo el Excel más reciente.</p>
   </div>
 </header>
 
-<!-- SECTION 1: VIAJEROS Y TERCEROS MAKAND -->
+<!-- ======================= SECCIÓN 1: MAKAND ======================= -->
 <section class="section">
   <div class="section-head">
-    <span class="week-tab" id="tabMakand">SEM 28</span>
+    <span class="week-tab">SEM {{ makand().week }}</span>
     <h2>Viajes por transportadora — Planta Makand</h2>
     <div class="upload-box">
-      <span class="src" id="srcMakand">VIAJEROS_Y_TERCEROS_MAKAND.xlsx</span>
-      <button class="upload-btn" onclick="document.getElementById('fileMakand').click()">Actualizar archivo</button>
-      <input type="file" id="fileMakand" accept=".xlsx,.xls" style="display:none" onchange="handleUpload(event,'makand')">
-      <span class="upload-status" id="statusMakand"></span>
+      <span class="src">{{ fuenteMakand() }}</span>
+      <button class="upload-btn" (click)="fileMakand.click()">Actualizar archivo</button>
+      <input #fileMakand type="file" accept=".xlsx,.xls" style="display:none" (change)="onFileSelected($event, 'makand')">
+      <span class="upload-status" [class.ok]="statusMakand().cls==='ok'" [class.err]="statusMakand().cls==='err'">{{ statusMakand().msg }}</span>
     </div>
   </div>
-  <p class="section-note" id="noteMakand">51 viajes registrados en la semana 28, repartidos entre 3 transportadoras. Los % de cumplimiento de llegada corresponden a la llegada del vehículo a planta según la hora citada.</p>
+
+  <p class="section-note">
+    {{ makand().total }} viajes registrados en la semana {{ makand().week }}, repartidos entre {{ makand().transportadoras.length }} transportadora(s).
+    Los % de cumplimiento de llegada corresponden a la llegada del vehículo a planta según la hora citada.
+  </p>
 
   <div class="kpi-row">
-    <div class="kpi"><div class="label">Viajes totales</div><div class="value" id="kpiMakandTotal">51</div><div class="sub" id="kpiMakandPeriodo">semana 28</div></div>
-    <div class="kpi"><div class="label">Cumplimiento llegada</div><div class="value green" id="kpiMakandCumple">74.5%</div><div class="sub">promedio general</div></div>
-    <div class="kpi"><div class="label">Cajas movilizadas</div><div class="value" id="kpiMakandCajas">21,991</div><div class="sub" id="kpiMakandCajasSub">MAKAND+ARSITRANS+POLAR</div></div>
-    <div class="kpi"><div class="label">Transportadora líder</div><div class="value ochre" id="kpiMakandLider">MAKAND</div><div class="sub" id="kpiMakandLiderSub">45.1% de los viajes</div></div>
+    <div class="kpi">
+      <div class="label">Viajes totales</div>
+      <div class="value">{{ makand().total }}</div>
+      <div class="sub">semana {{ makand().week }}</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Cumplimiento llegada</div>
+      <div class="value green">{{ fmt(makand().overallLlegada) }}</div>
+      <div class="sub">promedio general</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Cajas movilizadas</div>
+      <div class="value">{{ makand().totalCajas | number:'1.0-0' }}</div>
+      <div class="sub">{{ makand().transportadoras.join('+') }}</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Transportadora líder</div>
+      <div class="value ochre">{{ makand().lider }}</div>
+      <div class="sub">{{ fmt(makand().liderPct) }} de los viajes</div>
+    </div>
   </div>
 
-  <div class="card" style="margin-bottom:24px;">
+  <div class="card" style="margin-bottom:24px;" *ngIf="makand().monthly as m">
     <h3>Resumen mensual — viajes y cumplimiento de llegada</h3>
-    <div class="chart-wrap" style="height:260px;"><canvas id="chartMakandMes"></canvas></div>
+    <div class="chart-wrap" style="height:260px;"><canvas #chartMakandMes></canvas></div>
     <table style="margin-top:16px;">
       <thead><tr><th>Mes</th><th>Viajes</th><th>% Cumple llegada</th><th>Estado</th></tr></thead>
-      <tbody id="tableMakandMes"></tbody>
+      <tbody>
+        <tr *ngFor="let mes of m.meses; let i = index">
+          <td class="name">{{ nombreMes(mes) }}</td>
+          <td>{{ m.total[i] }}</td>
+          <td>{{ fmt(m.pct[i]) }}</td>
+          <td>
+            <span class="pill mid" *ngIf="esMesActual(mes)">En curso</span>
+            <span class="pill good" *ngIf="!esMesActual(mes)">Cerrado</span>
+          </td>
+        </tr>
+      </tbody>
     </table>
   </div>
 
   <div class="card" style="margin-bottom:24px;">
     <h3>Evolución semanal — viajes y cumplimiento de llegada</h3>
-    <div class="chart-wrap" style="height:280px;"><canvas id="chartMakandTrend"></canvas></div>
+    <div class="chart-wrap" style="height:280px;"><canvas #chartMakandTrend></canvas></div>
   </div>
 
   <div class="grid-2">
     <div class="card">
-      <h3>Viajes por transportadora <span id="makandLatestLabel">(semana 28)</span></h3>
-      <div class="chart-wrap"><canvas id="chartTransp"></canvas></div>
+      <h3>Viajes por transportadora <span>(semana {{ makand().week }})</span></h3>
+      <div class="chart-wrap"><canvas #chartTransp></canvas></div>
     </div>
     <div class="card">
-      <h3>Detalle por transportadora <span id="makandLatestLabel2">(semana 28)</span></h3>
+      <h3>Detalle por transportadora <span>(semana {{ makand().week }})</span></h3>
       <table>
         <thead><tr><th>Transportadora</th><th>Viajes</th><th>% del total</th><th>Cumple llegada</th><th>Cumple cargue</th></tr></thead>
-        <tbody id="tableMakand">
-        <tr>
-          <td class="name"><span class="legend-dot" style="background:#2F6F4E"></span>MAKAND</td>
-          <td>23</td><td>45.1%</td>
-          <td><span class="pill good">91.3%</span></td>
-          <td><span class="pill mid">56.5%</span></td>
-        </tr>
-        <tr>
-          <td class="name"><span class="legend-dot" style="background:#BE8A2E"></span>ARSITRANS</td>
-          <td>17</td><td>33.3%</td>
-          <td><span class="pill mid">64.7%</span></td>
-          <td><span class="pill mid">47.1%</span></td>
-        </tr>
-        <tr>
-          <td class="name"><span class="legend-dot" style="background:#B5453A"></span>POLAR</td>
-          <td>11</td><td>21.6%</td>
-          <td><span class="pill mid">54.5%</span></td>
-          <td><span class="pill good">81.8%</span></td>
-        </tr>
+        <tbody>
+          <tr *ngFor="let t of makand().transportadoras; let i = index">
+            <td class="name"><span class="legend-dot" [style.background]="PALETTE[i % PALETTE.length]"></span>{{ t }}</td>
+            <td>{{ makand().transpMap[t].total }}</td>
+            <td>{{ fmt(makand().transpMap[t].total / makand().total * 100) }}</td>
+            <td><span class="pill" [ngClass]="pillClass(makand().transpMap[t].llegadaOk / makand().transpMap[t].total * 100)">
+              {{ fmt(makand().transpMap[t].llegadaOk / makand().transpMap[t].total * 100) }}
+            </span></td>
+            <td><span class="pill" [ngClass]="pillClass(makand().transpMap[t].cargueOk / makand().transpMap[t].total * 100)">
+              {{ fmt(makand().transpMap[t].cargueOk / makand().transpMap[t].total * 100) }}
+            </span></td>
+          </tr>
         </tbody>
       </table>
     </div>
   </div>
 </section>
 
-<!-- SECTION 2: ON TIME EN TIENDAS -->
+<!-- ======================= SECCIÓN 2: TIENDAS ======================= -->
 <section class="section">
   <div class="section-head">
-    <span class="week-tab" id="tabTiendas">SEM 28</span>
+    <span class="week-tab">SEM {{ tiendas().week }}</span>
     <h2>Cumplimiento de horarios — Tiendas</h2>
     <div class="upload-box">
-      <span class="src" id="srcTiendas">ON_TIME_EN_TIENDAS.xlsx</span>
-      <button class="upload-btn" onclick="document.getElementById('fileTiendas').click()">Actualizar archivo</button>
-      <input type="file" id="fileTiendas" accept=".xlsx,.xls" style="display:none" onchange="handleUpload(event,'tiendas')">
-      <span class="upload-status" id="statusTiendas"></span>
+      <span class="src">{{ fuenteTiendas() }}</span>
+      <button class="upload-btn" (click)="fileTiendas.click()">Actualizar archivo</button>
+      <input #fileTiendas type="file" accept=".xlsx,.xls" style="display:none" (change)="onFileSelected($event, 'tiendas')">
+      <span class="upload-status" [class.ok]="statusTiendas().cls==='ok'" [class.err]="statusTiendas().cls==='err'">{{ statusTiendas().msg }}</span>
     </div>
   </div>
-  <p class="section-note" id="noteTiendas">139 registros de llegada/salida en ruta durante la semana 28. El cumplimiento mide si el vehículo permaneció en el punto dentro del tiempo estándar asignado.</p>
+
+  <p class="section-note">
+    {{ tiendas().total }} registros de llegada/salida en ruta durante la semana {{ tiendas().week }}.
+    El cumplimiento mide si el vehículo permaneció en el punto dentro del tiempo estándar asignado.
+  </p>
 
   <div class="kpi-row">
-    <div class="kpi"><div class="label">Registros de ruta</div><div class="value" id="kpiTiendasTotal">139</div><div class="sub" id="kpiTiendasPeriodo">semana 28</div></div>
-    <div class="kpi"><div class="label">Cumple</div><div class="value green" id="kpiTiendasCumple">38.8%</div><div class="sub" id="kpiTiendasCumpleSub">54 registros</div></div>
-    <div class="kpi"><div class="label">Cumple parcial</div><div class="value ochre" id="kpiTiendasParcial">11.5%</div><div class="sub" id="kpiTiendasParcialSub">16 registros</div></div>
-    <div class="kpi"><div class="label">No cumple</div><div class="value brick" id="kpiTiendasNoCumple">49.6%</div><div class="sub" id="kpiTiendasNoCumpleSub">69 registros</div></div>
+    <div class="kpi">
+      <div class="label">Registros de ruta</div>
+      <div class="value">{{ tiendas().total }}</div>
+      <div class="sub">semana {{ tiendas().week }}</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Cumple</div>
+      <div class="value green">{{ fmt((tiendas().dist['CUMPLE'] || 0) / tiendas().total * 100) }}</div>
+      <div class="sub">{{ tiendas().dist['CUMPLE'] || 0 }} registros</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Cumple parcial</div>
+      <div class="value ochre">{{ fmt((tiendas().dist['CUMPLE PARCIAL'] || 0) / tiendas().total * 100) }}</div>
+      <div class="sub">{{ tiendas().dist['CUMPLE PARCIAL'] || 0 }} registros</div>
+    </div>
+    <div class="kpi">
+      <div class="label">No cumple</div>
+      <div class="value brick">{{ fmt((tiendas().dist['NO CUMPLE'] || 0) / tiendas().total * 100) }}</div>
+      <div class="sub">{{ tiendas().dist['NO CUMPLE'] || 0 }} registros</div>
+    </div>
   </div>
 
-  <div class="card" style="margin-bottom:24px;">
+  <div class="card" style="margin-bottom:24px;" *ngIf="tiendas().monthly as m">
     <h3>Resumen mensual — registros y % cumplimiento</h3>
-    <div class="chart-wrap" style="height:260px;"><canvas id="chartTiendasMes"></canvas></div>
+    <div class="chart-wrap" style="height:260px;"><canvas #chartTiendasMes></canvas></div>
     <table style="margin-top:16px;">
       <thead><tr><th>Mes</th><th>Registros</th><th>% Cumple</th><th>Estado</th></tr></thead>
-      <tbody id="tableTiendasMes"></tbody>
+      <tbody>
+        <tr *ngFor="let mes of m.meses; let i = index">
+          <td class="name">{{ nombreMes(mes) }}</td>
+          <td>{{ m.total[i] }}</td>
+          <td>{{ fmt(m.pct[i]) }}</td>
+          <td>
+            <span class="pill mid" *ngIf="esMesActual(mes)">En curso</span>
+            <span class="pill good" *ngIf="!esMesActual(mes)">Cerrado</span>
+          </td>
+        </tr>
+      </tbody>
     </table>
   </div>
 
   <div class="card" style="margin-bottom:24px;">
     <h3>Evolución semanal — % de cumplimiento</h3>
-    <div class="chart-wrap" style="height:280px;"><canvas id="chartTiendasTrend"></canvas></div>
+    <div class="chart-wrap" style="height:280px;"><canvas #chartTiendasTrend></canvas></div>
   </div>
 
   <div class="grid-2">
     <div class="card">
-      <h3>Distribución de cumplimiento <span id="tiendasLatestLabel">(semana 28)</span></h3>
-      <div class="chart-wrap"><canvas id="chartTiendas"></canvas></div>
+      <h3>Distribución de cumplimiento <span>(semana {{ tiendas().week }})</span></h3>
+      <div class="chart-wrap"><canvas #chartTiendas></canvas></div>
     </div>
     <div class="card">
-      <h3>Cumplimiento por CEDI <span id="tiendasLatestLabel2">(semana 28)</span></h3>
+      <h3>Cumplimiento por CEDI <span>(semana {{ tiendas().week }})</span></h3>
       <table>
         <thead><tr><th>CEDI</th><th>Registros</th><th>Participación</th></tr></thead>
-        <tbody id="tableCedi">
-        <tr><td class="name">Tiendas</td><td>90</td><td>64.7%</td></tr>
-        <tr><td class="name">CEDI 2</td><td>32</td><td>23.0%</td></tr>
-        <tr><td class="name">CEDI 1</td><td>9</td><td>6.5%</td></tr>
-        <tr><td class="name">CEDI ARA</td><td>8</td><td>5.8%</td></tr>
+        <tbody>
+          <tr *ngFor="let cd of tiendas().cedis">
+            <td class="name">{{ cd }}</td>
+            <td>{{ tiendas().cediMap[cd] }}</td>
+            <td>{{ fmt(tiendas().cediMap[cd] / tiendas().total * 100) }}</td>
+          </tr>
         </tbody>
       </table>
-      <h3 style="margin-top:22px;">Rutas con más registros <span id="rutasMesLabel">(semana 28)</span></h3>
+
+      <h3 style="margin-top:22px;">Rutas con más registros <span>(semana {{ tiendas().week }})</span></h3>
       <table>
         <thead><tr><th>Ruta / región</th><th>Registros</th><th>% Cumple</th></tr></thead>
-        <tbody id="tableRutas">
-        <tr><td class="name">Plataforma Siberia</td><td>11</td><td><span class="pill good">100.0%</span></td></tr>
-        <tr><td class="name">Olímpica</td><td>6</td><td><span class="pill bad">0.0%</span></td></tr>
-        <tr><td class="name">Plataforma Cencosud</td><td>5</td><td><span class="pill mid">20.0%</span></td></tr>
-        <tr><td class="name">D1 Tocancipá</td><td>5</td><td><span class="pill mid">60.0%</span></td></tr>
-        <tr><td class="name">Jumbo Santa Ana</td><td>5</td><td><span class="pill bad">0.0%</span></td></tr>
+        <tbody>
+          <tr *ngFor="let rg of tiendas().topRegiones">
+            <td class="name">{{ rg }}</td>
+            <td>{{ tiendas().regionMap[rg].total }}</td>
+            <td><span class="pill" [ngClass]="pillClass(tiendas().regionMap[rg].cumple / tiendas().regionMap[rg].total * 100)">
+              {{ fmt(tiendas().regionMap[rg].cumple / tiendas().regionMap[rg].total * 100) }}
+            </span></td>
+          </tr>
         </tbody>
       </table>
     </div>
   </div>
 </section>
 
-<!-- SECTION 3: ON TIME AGRICULTORES -->
+<!-- ======================= SECCIÓN 3: AGRICULTORES ======================= -->
 <section class="section">
   <div class="section-head">
-    <span class="week-tab" id="tabAgri">SEM 23</span>
+    <span class="week-tab">SEM {{ agri().weekLabel }}</span>
     <h2>Cumplimiento de recogida — Agricultores</h2>
     <div class="upload-box">
-      <span class="src" id="srcAgri">ON_TIME_AGRICULTORES_2026_ACT.xlsx</span>
-      <button class="upload-btn" onclick="document.getElementById('fileAgri').click()">Actualizar archivo</button>
-      <input type="file" id="fileAgri" accept=".xlsx,.xls" style="display:none" onchange="handleUpload(event,'agri')">
-      <span class="upload-status" id="statusAgri"></span>
+      <span class="src">{{ fuenteAgri() }}</span>
+      <button class="upload-btn" (click)="fileAgri.click()">Actualizar archivo</button>
+      <input #fileAgri type="file" accept=".xlsx,.xls" style="display:none" (change)="onFileSelected($event, 'agri')">
+      <span class="upload-status" [class.ok]="statusAgri().cls==='ok'" [class.err]="statusAgri().cls==='err'">{{ statusAgri().msg }}</span>
     </div>
   </div>
-  <p class="section-note" id="noteAgri">Cumplimiento semanal por agricultor en tres momentos del proceso: llegada del transporte, tiempo en finca y llegada a planta. Este archivo no trae una columna de mes, por lo que aquí solo se puede ver la evolución semana a semana (no hay resumen mensual).</p>
+
+  <p class="section-note">
+    Cumplimiento semanal por agricultor en tres momentos del proceso: llegada del transporte, tiempo en finca y llegada a planta.
+    Este archivo no trae columna de mes, por lo que aquí solo se ve la evolución semana a semana.
+  </p>
 
   <div class="kpi-row">
-    <div class="kpi"><div class="label">Viajes <span id="kpiAgriSemanaLabel">semana 23</span></div><div class="value" id="kpiAgriTotal">70</div><div class="sub" id="kpiAgriTotalSub">6 agricultores</div></div>
-    <div class="kpi"><div class="label">Cumple llegada</div><div class="value ochre" id="kpiAgriLlegada">54.3%</div><div class="sub">promedio ponderado</div></div>
-    <div class="kpi"><div class="label">Cumple tiempo en finca</div><div class="value brick" id="kpiAgriTiempo">21.4%</div><div class="sub">promedio ponderado</div></div>
-    <div class="kpi"><div class="label">Cumple llegada a planta</div><div class="value brick" id="kpiAgriPlanta">0.0%</div><div class="sub">promedio ponderado</div></div>
+    <div class="kpi">
+      <div class="label">Viajes semana {{ agri().weekLabel }}</div>
+      <div class="value">{{ agri().totalViajes }}</div>
+      <div class="sub">{{ agri().agricultores.length }} agricultores</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Cumple llegada</div>
+      <div class="value ochre">{{ fmt(agri().avgLlegada) }}</div>
+      <div class="sub">promedio ponderado</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Cumple tiempo en finca</div>
+      <div class="value brick">{{ fmt(agri().avgTiempo) }}</div>
+      <div class="sub">promedio ponderado</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Cumple llegada a planta</div>
+      <div class="value brick">{{ fmt(agri().avgPlanta) }}</div>
+      <div class="sub">promedio ponderado</div>
+    </div>
   </div>
 
   <div class="card" style="margin-bottom:24px;">
     <h3>Evolución semanal — % cumplimiento por etapa</h3>
-    <div class="chart-wrap" style="height:280px;"><canvas id="chartAgriTrend"></canvas></div>
+    <div class="chart-wrap" style="height:280px;"><canvas #chartAgriTrend></canvas></div>
   </div>
 
   <div class="grid-2">
     <div class="card">
-      <h3>Cumplimiento de llegada por agricultor <span id="chartAgriLabel">(S23)</span></h3>
-      <div class="chart-wrap"><canvas id="chartAgri"></canvas></div>
+      <h3>Cumplimiento de llegada por agricultor <span>(S{{ agri().weekLabel }})</span></h3>
+      <div class="chart-wrap"><canvas #chartAgri></canvas></div>
     </div>
     <div class="card">
-      <h3>Detalle por agricultor — <span id="tableAgriLabel">semana 23</span></h3>
+      <h3>Detalle por agricultor — <span>semana {{ agri().weekLabel }}</span></h3>
       <table>
         <thead><tr><th>Agricultor</th><th>Viajes</th><th>Llegada</th><th>Tiempo finca</th><th>Llegada planta</th></tr></thead>
-        <tbody id="tableAgri">
-        <tr><td class="name">Diego</td><td>6</td><td><span class="pill bad">16.7%</span></td><td><span class="pill bad">16.7%</span></td><td><span class="pill bad">0.0%</span></td></tr>
-        <tr><td class="name">Ferrucas</td><td>47</td><td><span class="pill good">65.9%</span></td><td><span class="pill bad">0.0%</span></td><td><span class="pill bad">0.0%</span></td></tr>
-        <tr><td class="name">Gabriel</td><td>7</td><td><span class="pill bad">0.0%</span></td><td><span class="pill good">85.7%</span></td><td><span class="pill bad">0.0%</span></td></tr>
-        <tr><td class="name">Georgeth</td><td>1</td><td><span class="pill bad">0.0%</span></td><td><span class="pill good">100.0%</span></td><td><span class="pill bad">0.0%</span></td></tr>
-        <tr><td class="name">José Tibaquicha</td><td>3</td><td><span class="pill bad">0.0%</span></td><td><span class="pill mid">33.3%</span></td><td><span class="pill bad">0.0%</span></td></tr>
-        <tr><td class="name">Lechugas del Día</td><td>6</td><td><span class="pill good">100.0%</span></td><td><span class="pill good">100.0%</span></td><td><span class="pill mid">—</span></td></tr>
+        <tbody>
+          <tr *ngFor="let a of agri().agricultores">
+            <td class="name">{{ a.name }}</td>
+            <td>{{ a.viajes }}</td>
+            <td><span class="pill" [ngClass]="pillClass(a.pctLlegada)">{{ fmt(a.pctLlegada) }}</span></td>
+            <td><span class="pill" [ngClass]="pillClass(a.pctTiempo)">{{ fmt(a.pctTiempo) }}</span></td>
+            <td><span class="pill" [ngClass]="pillClass(a.pctPlanta)">{{ fmt(a.pctPlanta) }}</span></td>
+          </tr>
         </tbody>
       </table>
     </div>
@@ -453,566 +275,5 @@
 </section>
 
 <footer>
-  Reporte generado a partir de 3 archivos Excel proporcionados. Ningún archivo original fue modificado. · Los datos se agrupan por semana (columna SEMANA / SEMANAS de cada archivo), mostrando siempre la semana más reciente disponible, esté o no en curso.
+
 </footer>
-
-<script>
-Chart.defaults.color = '#8B7E6C';
-Chart.defaults.font.family = "'Space Mono', monospace";
-Chart.defaults.font.size = 11;
-
-const PALETTE = ['#2F6F4E','#BE8A2E','#B5453A','#3E6C99','#7A5C99','#5C8A6E'];
-const MESES_ORDER = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
-const CURRENT_MONTH_NAME = MESES_ORDER[new Date().getMonth()];
-
-let charts = {};
-
-function makeDoughnut(id, labels, data, colors){
-  if(charts[id]) charts[id].destroy();
-  charts[id] = new Chart(document.getElementById(id), {
-    type:'doughnut',
-    data:{ labels, datasets:[{ data, backgroundColor:colors, borderColor:'#FFFEFB', borderWidth:3 }] },
-    options:{ plugins:{legend:{position:'bottom', labels:{boxWidth:10, padding:16}}}, cutout:'62%' }
-  });
-}
-function makeStackedBar(id, labels, datasets){
-  if(charts[id]) charts[id].destroy();
-  charts[id] = new Chart(document.getElementById(id), {
-    type:'bar',
-    data:{ labels, datasets },
-    options:{
-      responsive:true, maintainAspectRatio:false,
-      scales:{ x:{stacked:true, grid:{display:false}}, y:{stacked:true, grid:{color:'#E4DAC3'}} },
-      plugins:{legend:{position:'bottom', labels:{boxWidth:10,padding:14}}}
-    }
-  });
-}
-function makeHBar(id, labels, data, colors, max){
-  if(charts[id]) charts[id].destroy();
-  charts[id] = new Chart(document.getElementById(id), {
-    type:'bar',
-    data:{ labels, datasets:[{ data, backgroundColor:colors }] },
-    options:{
-      responsive:true, maintainAspectRatio:false, indexAxis:'y',
-      scales:{ x:{max:max||100, grid:{color:'#E4DAC3'}}, y:{grid:{display:false}} },
-      plugins:{legend:{display:false}}
-    }
-  });
-}
-function makeLine(id, labels, datasets, dualAxis){
-  if(charts[id]) charts[id].destroy();
-  const scales = dualAxis ? {
-    x:{ grid:{display:false} },
-    y:{ position:'left', grid:{color:'#E4DAC3'}, title:{display:true, text:'Viajes / registros', font:{size:10}} },
-    y1:{ position:'right', min:0, max:100, grid:{display:false}, title:{display:true, text:'% cumplimiento', font:{size:10}} }
-  } : {
-    x:{ grid:{display:false} },
-    y:{ min:0, max:100, grid:{color:'#E4DAC3'} }
-  };
-  charts[id] = new Chart(document.getElementById(id), {
-    type:'line',
-    data:{ labels, datasets },
-    options:{
-      responsive:true, maintainAspectRatio:false,
-      interaction:{mode:'index', intersect:false},
-      scales,
-      plugins:{legend:{position:'bottom', labels:{boxWidth:10,padding:14}}}
-    }
-  });
-}
-
-function pillClass(pct){
-  if(pct===null||pct===undefined||isNaN(pct)) return 'mid';
-  if(pct>=70) return 'good';
-  if(pct>=40) return 'mid';
-  return 'bad';
-}
-function fmtPct(pct){ return (pct===null||pct===undefined||isNaN(pct)) ? '—' : pct.toFixed(1)+'%'; }
-
-// ---------- helpers ----------
-function findSheet(wb, patterns){
-  const names = wb.SheetNames;
-  for(const p of patterns){
-    const hit = names.find(n => n.toUpperCase().replace(/\s+/g,' ').trim().includes(p));
-    if(hit) return hit;
-  }
-  return null;
-}
-function sheetRows(wb, name){
-  const ws = wb.Sheets[name];
-  return XLSX.utils.sheet_to_json(ws, {header:1, defval:null, raw:true});
-}
-function colIndex(header, names){
-  const candidates = Array.isArray(names) ? names : [names];
-  for(const name of candidates){
-    const idx = header.findIndex(h => h && String(h).trim().toUpperCase() === name.toUpperCase());
-    if(idx>=0) return idx;
-  }
-  return -1;
-}
-function pickLatestWeek(counts){
-  const weeks = Object.keys(counts).map(Number).filter(w=>!isNaN(w)).sort((a,b)=>a-b);
-  if(!weeks.length) return null;
-  return weeks[weeks.length-1];
-}
-
-// ---------- PARSER 1: VIAJEROS Y TERCEROS MAKAND ----------
-function parseMakand(wb){
-  const sheetName = findSheet(wb, ['DT VIAJEROS']);
-  if(!sheetName) throw new Error('No encontré la hoja "DT VIAJEROS." en este archivo.');
-  const rows = sheetRows(wb, sheetName);
-  const header = rows[0];
-  const iSem = colIndex(header,['SEMANAS','SEMANA']), iTransp = colIndex(header,'TRANSPORTE'),
-        iAlmacen = colIndex(header,'ALMACEN'), iLlegada = colIndex(header,'CUMPLIMIENTO LLEGADA VEHICULO'),
-        iCargue = colIndex(header,'CUMPLIMIENTO CARGUE VEHICULO'), iCajas = colIndex(header,'TOTAL CAJAS');
-  if(iSem<0||iTransp<0) throw new Error('No encontré las columnas SEMANA/TRANSPORTE esperadas.');
-  const data = rows.slice(1).filter(r=>r && r[iSem]!==null && r[iTransp]);
-
-  const counts = {};
-  data.forEach(r=>{ const w=Number(r[iSem]); counts[w]=(counts[w]||0)+1; });
-  const week = pickLatestWeek(counts);
-  const rowsWeek = data.filter(r=>Number(r[iSem])===week);
-
-  const transpMap = {};
-  const almacenSet = new Set();
-  rowsWeek.forEach(r=>{
-    const t = String(r[iTransp]).trim().toUpperCase();
-    if(!transpMap[t]) transpMap[t] = {total:0, llegadaOk:0, cargueOk:0, cajas:0, almacenes:{}};
-    transpMap[t].total++;
-    if(iLlegada>=0 && String(r[iLlegada]).trim().toUpperCase()==='CUMPLE') transpMap[t].llegadaOk++;
-    if(iCargue>=0 && String(r[iCargue]).trim().toUpperCase()==='CUMPLE') transpMap[t].cargueOk++;
-    if(iCajas>=0){ const v=parseFloat(r[iCajas]); if(!isNaN(v)) transpMap[t].cajas += v; }
-    const alm = iAlmacen>=0 ? String(r[iAlmacen]||'').trim() : 'N/D';
-    almacenSet.add(alm);
-    transpMap[t].almacenes[alm] = (transpMap[t].almacenes[alm]||0)+1;
-  });
-
-  const total = rowsWeek.length;
-  const transportadoras = Object.keys(transpMap).sort((a,b)=>transpMap[b].total-transpMap[a].total);
-  const overallLlegada = total ? (Object.values(transpMap).reduce((s,t)=>s+t.llegadaOk,0)/total*100) : 0;
-  const totalCajas = Object.values(transpMap).reduce((s,t)=>s+t.cajas,0);
-  const lider = transportadoras[0];
-
-  // ---- serie de TODAS las semanas ----
-  const allWeeks = [...new Set(data.map(r=>Number(r[iSem])))].sort((a,b)=>a-b);
-  const allTransportadoras = [...new Set(data.map(r=>String(r[iTransp]).trim().toUpperCase()))];
-  const trendTotal = [];
-  const trendLlegada = [];
-  const trendPorTransp = {}; allTransportadoras.forEach(t=>trendPorTransp[t]=[]);
-  allWeeks.forEach(w=>{
-    const rw = data.filter(r=>Number(r[iSem])===w);
-    trendTotal.push(rw.length);
-    const ok = iLlegada>=0 ? rw.filter(r=>String(r[iLlegada]).trim().toUpperCase()==='CUMPLE').length : 0;
-    trendLlegada.push(rw.length ? ok/rw.length*100 : null);
-    allTransportadoras.forEach(t=>{
-      trendPorTransp[t].push(rw.filter(r=>String(r[iTransp]).trim().toUpperCase()===t).length);
-    });
-  });
-
-  const trend = {
-    weeks: allWeeks, total: trendTotal, llegada: trendLlegada,
-    porTransportadora: trendPorTransp, transportadoras: allTransportadoras
-  };
-
-  // ---- resumen MENSUAL ----
-  const iMes = colIndex(header,'MES');
-  let monthly = null;
-  if(iMes>=0){
-    const mesesPresentes = [...new Set(data.map(r=>String(r[iMes]).trim().toUpperCase()))]
-      .filter(m=>MESES_ORDER.includes(m))
-      .sort((a,b)=>MESES_ORDER.indexOf(a)-MESES_ORDER.indexOf(b));
-    const totalPorMes = [], llegadaPorMes = [];
-    mesesPresentes.forEach(m=>{
-      const rm = data.filter(r=>String(r[iMes]).trim().toUpperCase()===m);
-      totalPorMes.push(rm.length);
-      const ok = iLlegada>=0 ? rm.filter(r=>String(r[iLlegada]).trim().toUpperCase()==='CUMPLE').length : 0;
-      llegadaPorMes.push(rm.length ? ok/rm.length*100 : null);
-    });
-    monthly = { meses:mesesPresentes, total:totalPorMes, llegada:llegadaPorMes };
-  }
-
-  return {
-    week, total, transportadoras, transpMap, almacenes:[...almacenSet],
-    overallLlegada, totalCajas, lider,
-    liderPct: total ? (transpMap[lider].total/total*100) : 0,
-    trend, monthly
-  };
-}
-
-function renderMakand(d, sourceLabel){
-  document.getElementById('tabMakand').textContent = 'SEM ' + d.week;
-  document.getElementById('srcMakand').textContent = sourceLabel;
-  document.getElementById('noteMakand').textContent = `${d.total} viajes registrados en la semana ${d.week}, repartidos entre ${d.transportadoras.length} transportadora(s). Los % de cumplimiento de llegada corresponden a la llegada del vehículo a planta según la hora citada.`;
-  document.getElementById('kpiMakandTotal').textContent = d.total;
-  document.getElementById('kpiMakandPeriodo').textContent = 'semana ' + d.week;
-  document.getElementById('kpiMakandCumple').textContent = fmtPct(d.overallLlegada);
-  document.getElementById('kpiMakandCajas').textContent = Math.round(d.totalCajas).toLocaleString('es-CO');
-  document.getElementById('kpiMakandCajasSub').textContent = d.transportadoras.join('+');
-  document.getElementById('kpiMakandLider').textContent = d.lider;
-  document.getElementById('kpiMakandLiderSub').textContent = fmtPct(d.liderPct)+' de los viajes';
-
-  const tbody = document.getElementById('tableMakand');
-  tbody.innerHTML = d.transportadoras.map((t,i)=>{
-    const m = d.transpMap[t];
-    const pctTotal = m.total/d.total*100;
-    const pctLlegada = m.total ? m.llegadaOk/m.total*100 : 0;
-    const pctCargue = m.total ? m.cargueOk/m.total*100 : 0;
-    return `<tr>
-      <td class="name"><span class="legend-dot" style="background:${PALETTE[i%PALETTE.length]}"></span>${t}</td>
-      <td>${m.total}</td><td>${fmtPct(pctTotal)}</td>
-      <td><span class="pill ${pillClass(pctLlegada)}">${fmtPct(pctLlegada)}</span></td>
-      <td><span class="pill ${pillClass(pctCargue)}">${fmtPct(pctCargue)}</span></td>
-    </tr>`;
-  }).join('');
-
-  makeDoughnut('chartTransp', d.transportadoras, d.transportadoras.map(t=>d.transpMap[t].total),
-    d.transportadoras.map((_,i)=>PALETTE[i%PALETTE.length]));
-
-  document.getElementById('makandLatestLabel').textContent = '(semana '+d.week+')';
-  document.getElementById('makandLatestLabel2').textContent = '(semana '+d.week+')';
-
-  const trendLabels = d.trend.weeks.map(w=>'S'+w);
-  makeLine('chartMakandTrend', trendLabels, [
-    { label:'Viajes totales', data:d.trend.total, borderColor:'#223A57', backgroundColor:'#223A57', tension:.3, yAxisID:'y' },
-    { label:'% Cumplimiento llegada', data:d.trend.llegada, borderColor:'#2F6F4E', backgroundColor:'#2F6F4E', tension:.3, borderDash:[4,3], yAxisID:'y1' }
-  ], true);
-
-  if(d.monthly) renderMonthly('chartMakandMes','tableMakandMes', d.monthly.meses, d.monthly.total, d.monthly.llegada, 'Viajes', '% Cumple llegada');
-}
-
-// ---------- PARSER 2: ON TIME EN TIENDAS ----------
-function parseTiendas(wb){
-  const sheetName = findSheet(wb, ['DETALLE REGIONES']);
-  if(!sheetName) throw new Error('No encontré la hoja "Detalle regiones" en este archivo.');
-  const rows = sheetRows(wb, sheetName);
-  const header = rows[0];
-  const iSem = colIndex(header,['SEMANA','SEMANAS']), iCump = colIndex(header,'CUMPLIMIENTO'),
-        iRegion = colIndex(header,'REGIÓN'), iCedi = colIndex(header,'CEDI');
-  if(iSem<0||iCump<0) throw new Error('No encontré las columnas SEMANA/CUMPLIMIENTO esperadas.');
-  const data = rows.slice(1).filter(r=>r && r[iSem]!==null);
-
-  const counts = {};
-  data.forEach(r=>{ const w=Number(r[iSem]); counts[w]=(counts[w]||0)+1; });
-  const week = pickLatestWeek(counts);
-  const rowsWeek = data.filter(r=>Number(r[iSem])===week);
-
-  const dist = {};
-  const cediMap = {};
-  const regionMap = {};
-  rowsWeek.forEach(r=>{
-    const c = iCump>=0 ? String(r[iCump]||'').trim().toUpperCase() : 'N/D';
-    dist[c] = (dist[c]||0)+1;
-    if(iCedi>=0){ const cd=String(r[iCedi]||'').trim()||'N/D'; cediMap[cd]=(cediMap[cd]||0)+1; }
-    if(iRegion>=0){
-      const rg = String(r[iRegion]||'').trim()||'N/D';
-      if(!regionMap[rg]) regionMap[rg] = {total:0, cumple:0};
-      regionMap[rg].total++;
-      if(c==='CUMPLE') regionMap[rg].cumple++;
-    }
-  });
-
-  const total = rowsWeek.length;
-  const topRegiones = Object.keys(regionMap).sort((a,b)=>regionMap[b].total-regionMap[a].total).slice(0,5);
-  const cedis = Object.keys(cediMap).sort((a,b)=>cediMap[b]-cediMap[a]);
-
-  // ---- serie de TODAS las semanas ----
-  const allWeeks = [...new Set(data.map(r=>Number(r[iSem])))].sort((a,b)=>a-b);
-  const trendCumple = [], trendParcial = [], trendNoCumple = [], trendTotal = [];
-  allWeeks.forEach(w=>{
-    const rw = data.filter(r=>Number(r[iSem])===w);
-    const t = rw.length;
-    trendTotal.push(t);
-    const c = rw.filter(r=>String(r[iCump]||'').trim().toUpperCase()==='CUMPLE').length;
-    const p = rw.filter(r=>String(r[iCump]||'').trim().toUpperCase()==='CUMPLE PARCIAL').length;
-    const n = rw.filter(r=>String(r[iCump]||'').trim().toUpperCase()==='NO CUMPLE').length;
-    trendCumple.push(t? c/t*100 : null);
-    trendParcial.push(t? p/t*100 : null);
-    trendNoCumple.push(t? n/t*100 : null);
-  });
-
-  return {week, total, dist, cediMap, cedis, regionMap, topRegiones,
-    trend:{ weeks:allWeeks, cumple:trendCumple, parcial:trendParcial, noCumple:trendNoCumple, total:trendTotal },
-    monthly: (function(){
-      const iMes = colIndex(header,'MES');
-      if(iMes<0) return null;
-      const mesesPresentes = [...new Set(data.map(r=>String(r[iMes]).trim().toUpperCase()))]
-        .filter(m=>MESES_ORDER.includes(m))
-        .sort((a,b)=>MESES_ORDER.indexOf(a)-MESES_ORDER.indexOf(b));
-      const totalPorMes = [], cumplePorMes = [];
-      mesesPresentes.forEach(m=>{
-        const rm = data.filter(r=>String(r[iMes]).trim().toUpperCase()===m);
-        totalPorMes.push(rm.length);
-        const ok = rm.filter(r=>String(r[iCump]||'').trim().toUpperCase()==='CUMPLE').length;
-        cumplePorMes.push(rm.length ? ok/rm.length*100 : null);
-      });
-      return { meses:mesesPresentes, total:totalPorMes, cumple:cumplePorMes };
-    })()
-  };
-}
-
-function renderTiendas(d, sourceLabel){
-  document.getElementById('tabTiendas').textContent = 'SEM ' + d.week;
-  document.getElementById('srcTiendas').textContent = sourceLabel;
-  document.getElementById('noteTiendas').textContent = `${d.total} registros de llegada/salida en ruta durante la semana ${d.week}. El cumplimiento mide si el vehículo permaneció en el punto dentro del tiempo estándar asignado.`;
-  document.getElementById('rutasMesLabel').textContent = '(semana '+d.week+')';
-
-  const cumple = d.dist['CUMPLE']||0, parcial = d.dist['CUMPLE PARCIAL']||0, noCumple = d.dist['NO CUMPLE']||0;
-  document.getElementById('kpiTiendasTotal').textContent = d.total;
-  document.getElementById('kpiTiendasPeriodo').textContent = 'semana ' + d.week;
-  document.getElementById('kpiTiendasCumple').textContent = fmtPct(cumple/d.total*100);
-  document.getElementById('kpiTiendasCumpleSub').textContent = cumple+' registros';
-  document.getElementById('kpiTiendasParcial').textContent = fmtPct(parcial/d.total*100);
-  document.getElementById('kpiTiendasParcialSub').textContent = parcial+' registros';
-  document.getElementById('kpiTiendasNoCumple').textContent = fmtPct(noCumple/d.total*100);
-  document.getElementById('kpiTiendasNoCumpleSub').textContent = noCumple+' registros';
-
-  document.getElementById('tableCedi').innerHTML = d.cedis.map(cd=>{
-    const pct = d.cediMap[cd]/d.total*100;
-    return `<tr><td class="name">${cd}</td><td>${d.cediMap[cd]}</td><td>${fmtPct(pct)}</td></tr>`;
-  }).join('');
-
-  document.getElementById('tableRutas').innerHTML = d.topRegiones.map(rg=>{
-    const info = d.regionMap[rg];
-    const pct = info.total ? info.cumple/info.total*100 : null;
-    return `<tr><td class="name">${rg}</td><td>${info.total}</td><td><span class="pill ${pillClass(pct)}">${fmtPct(pct)}</span></td></tr>`;
-  }).join('');
-
-  const labels = Object.keys(d.dist);
-  makeDoughnut('chartTiendas', labels, labels.map(l=>d.dist[l]), labels.map((l,i)=>{
-    if(l==='CUMPLE') return '#2F6F4E'; if(l==='CUMPLE PARCIAL') return '#BE8A2E';
-    if(l==='NO CUMPLE') return '#B5453A'; return PALETTE[i%PALETTE.length];
-  }));
-
-  document.getElementById('tiendasLatestLabel').textContent = '(semana '+d.week+')';
-  document.getElementById('tiendasLatestLabel2').textContent = '(semana '+d.week+')';
-
-  const trendLabels = d.trend.weeks.map(w=>'S'+w);
-  makeLine('chartTiendasTrend', trendLabels, [
-    { label:'% Cumple', data:d.trend.cumple, borderColor:'#2F6F4E', backgroundColor:'#2F6F4E', tension:.3 },
-    { label:'% Cumple parcial', data:d.trend.parcial, borderColor:'#BE8A2E', backgroundColor:'#BE8A2E', tension:.3 },
-    { label:'% No cumple', data:d.trend.noCumple, borderColor:'#B5453A', backgroundColor:'#B5453A', tension:.3 }
-  ], false);
-
-  if(d.monthly) renderMonthly('chartTiendasMes','tableTiendasMes', d.monthly.meses, d.monthly.total, d.monthly.cumple, 'Registros', '% Cumple');
-}
-
-// ---------- render genérico de resumen mensual (dos ejes: total y %) ----------
-function renderMonthly(chartId, tableId, meses, totales, pcts, labelTotal, labelPct){
-  makeLine(chartId, meses.map(m=>m.charAt(0)+m.slice(1).toLowerCase()), [
-    { label:labelTotal, data:totales, borderColor:'#223A57', backgroundColor:'#223A57', tension:.3, yAxisID:'y', type:'bar' },
-    { label:labelPct, data:pcts, borderColor:'#2F6F4E', backgroundColor:'#2F6F4E', tension:.3, borderDash:[4,3], yAxisID:'y1' }
-  ], true);
-
-  document.getElementById(tableId).innerHTML = meses.map((m,i)=>{
-    const isCurrent = m === CURRENT_MONTH_NAME;
-    const estado = isCurrent ? '<span class="pill mid">En curso</span>' : '<span class="pill good">Cerrado</span>';
-    const label = m.charAt(0)+m.slice(1).toLowerCase();
-    return `<tr><td class="name">${label}</td><td>${totales[i]}</td><td>${fmtPct(pcts[i])}</td><td>${estado}</td></tr>`;
-  }).join('');
-}
-
-// ---------- PARSER 3: ON TIME AGRICULTORES ----------
-function parseAgri(wb){
-  const sheetName = findSheet(wb, ['RESUMEN']);
-  if(!sheetName) throw new Error('No encontré la hoja "RESUMEN" en este archivo.');
-  const rows = sheetRows(wb, sheetName);
-
-  function norm(v){
-    return String(v==null?'':v).replace(/[\u00A0\u200B]/g,' ').trim().toUpperCase();
-  }
-
-  let headerRow = -1, headerCol = -1;
-  for(let i=0;i<rows.length && headerRow<0;i++){
-    const row = rows[i];
-    if(!row) continue;
-    for(let c=0;c<row.length;c++){
-      if(norm(row[c])==='AGRICULTOR'){ headerRow=i; headerCol=c; break; }
-    }
-  }
-  if(headerRow<0) throw new Error('No encontré la tabla "Agricultor" en la hoja RESUMEN. Puede que la hoja haya cambiado de estructura.');
-  const weekRow = rows[headerRow+1];
-  const weekCols = [];
-  for(let c=headerCol+2;c<weekRow.length;c++){ if(weekRow[c]!==null && weekRow[c]!==undefined && weekRow[c]!=='') weekCols.push(c); }
-  if(!weekCols.length) throw new Error('No encontré columnas de semana (S..) en RESUMEN.');
-  const nWeeks = weekCols.length/3 | 0;
-  const llegadaCols = weekCols.slice(0,nWeeks);
-  const lastWeekCol = llegadaCols[llegadaCols.length-1];
-  const tiempoCols = weekCols.slice(nWeeks, 2*nWeeks);
-  const plantaCols = weekCols.slice(2*nWeeks, 3*nWeeks);
-  const lastTiempoCol = tiempoCols[tiempoCols.length-1];
-  const lastPlantaCol = plantaCols[plantaCols.length-1];
-  const weekLabel = weekRow[lastWeekCol];
-
-  function toPct(v){
-    if(v===null||v===undefined||v==='-') return null;
-    if(typeof v === 'string' && v.trim().endsWith('%')) return parseFloat(v);
-    if(typeof v === 'number') return v<=1 ? v*100 : v;
-    return null;
-  }
-
-  const agricultores = [];
-  let r = headerRow+2;
-  const blockStarts = [];
-  while(r < rows.length){
-    const name = rows[r] && rows[r][headerCol];
-    if(!name) break;
-    blockStarts.push(r);
-    const totalViajes = rows[r][lastWeekCol];
-    const pctLlegada = toPct(rows[r+3] ? rows[r+3][lastWeekCol] : null);
-    const pctTiempo = toPct(rows[r+3] ? rows[r+3][lastTiempoCol] : null);
-    const pctPlanta = toPct(rows[r+3] ? rows[r+3][lastPlantaCol] : null);
-    if(typeof totalViajes === 'number'){
-      agricultores.push({name:String(name).trim(), viajes:totalViajes, pctLlegada, pctTiempo, pctPlanta});
-    }
-    r += 4;
-  }
-
-  const totalViajes = agricultores.reduce((s,a)=>s+a.viajes,0);
-  function weighted(key){
-    let num=0, den=0;
-    agricultores.forEach(a=>{ if(a[key]!==null){ num += a[key]*a.viajes; den += a.viajes; } });
-    return den ? num/den : null;
-  }
-
-  // ---- serie de TODAS las semanas, con el denominador propio de cada métrica ----
-  function weekSeries(cols){
-    return cols.map(col=>{
-      let num=0, den=0;
-      blockStarts.forEach(r0=>{
-        const total = rows[r0][col];
-        if(typeof total !== 'number') return;
-        let cumple = rows[r0+1] ? rows[r0+1][col] : null;
-        if(typeof cumple !== 'number') cumple = 0;
-        num += cumple; den += total;
-      });
-      return den ? num/den*100 : null;
-    });
-  }
-  const weekLabels = llegadaCols.map(c=>String(weekRow[c]).replace(/[^0-9]/g,''));
-  const trend = {
-    weeks: weekLabels,
-    llegada: weekSeries(llegadaCols),
-    tiempo: weekSeries(tiempoCols),
-    planta: weekSeries(plantaCols)
-  };
-
-  return {
-    weekLabel: weekLabel || '', agricultores, totalViajes,
-    avgLlegada: weighted('pctLlegada'), avgTiempo: weighted('pctTiempo'), avgPlanta: weighted('pctPlanta'),
-    trend
-  };
-}
-
-function renderAgri(d, sourceLabel){
-  const weekNum = String(d.weekLabel).replace(/[^0-9]/g,'') || d.weekLabel;
-  const wLabel = 'Semana ' + weekNum;
-  document.getElementById('tabAgri').textContent = 'SEM ' + weekNum;
-  document.getElementById('srcAgri').textContent = sourceLabel;
-  document.getElementById('kpiAgriSemanaLabel').textContent = 'semana ' + weekNum;
-  document.getElementById('chartAgriLabel').textContent = '(S'+weekNum+')';
-  document.getElementById('tableAgriLabel').textContent = wLabel.toLowerCase();
-
-  document.getElementById('kpiAgriTotal').textContent = d.totalViajes;
-  document.getElementById('kpiAgriTotalSub').textContent = d.agricultores.length + ' agricultores';
-  document.getElementById('kpiAgriLlegada').textContent = fmtPct(d.avgLlegada);
-  document.getElementById('kpiAgriTiempo').textContent = fmtPct(d.avgTiempo);
-  document.getElementById('kpiAgriPlanta').textContent = fmtPct(d.avgPlanta);
-
-  document.getElementById('tableAgri').innerHTML = d.agricultores.map(a=>`
-    <tr><td class="name">${a.name}</td><td>${a.viajes}</td>
-    <td><span class="pill ${pillClass(a.pctLlegada)}">${fmtPct(a.pctLlegada)}</span></td>
-    <td><span class="pill ${pillClass(a.pctTiempo)}">${fmtPct(a.pctTiempo)}</span></td>
-    <td><span class="pill ${pillClass(a.pctPlanta)}">${fmtPct(a.pctPlanta)}</span></td></tr>
-  `).join('');
-
-  makeHBar('chartAgri', d.agricultores.map(a=>a.name), d.agricultores.map(a=>a.pctLlegada||0),
-    d.agricultores.map(a=>pillClass(a.pctLlegada)==='good' ? '#2F6F4E' : pillClass(a.pctLlegada)==='mid' ? '#BE8A2E' : '#B5453A'));
-
-  const trendLabels = d.trend.weeks.map(w=>'S'+w);
-  makeLine('chartAgriTrend', trendLabels, [
-    { label:'% Cumple llegada', data:d.trend.llegada, borderColor:'#223A57', backgroundColor:'#223A57', tension:.3 },
-    { label:'% Cumple tiempo en finca', data:d.trend.tiempo, borderColor:'#BE8A2E', backgroundColor:'#BE8A2E', tension:.3 },
-    { label:'% Cumple llegada a planta', data:d.trend.planta, borderColor:'#B5453A', backgroundColor:'#B5453A', tension:.3 }
-  ], false);
-}
-
-// ---------- upload handling ----------
-function setStatus(key, msg, cls){
-  const el = document.getElementById('status'+key.charAt(0).toUpperCase()+key.slice(1));
-  el.textContent = msg;
-  el.className = 'upload-status'+(cls?(' '+cls):'');
-}
-
-function handleUpload(evt, kind){
-  const file = evt.target.files[0];
-  if(!file) return;
-  const keyName = kind==='makand'?'Makand':kind==='tiendas'?'Tiendas':'Agri';
-  setStatus(keyName.toLowerCase(), 'Leyendo '+file.name+'…');
-  const reader = new FileReader();
-  reader.onload = function(e){
-    try{
-      const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array', cellDates:false});
-      if(kind==='makand'){
-        const d = parseMakand(wb);
-        renderMakand(d, file.name);
-      } else if(kind==='tiendas'){
-        const d = parseTiendas(wb);
-        renderTiendas(d, file.name);
-      } else {
-        const d = parseAgri(wb);
-        renderAgri(d, file.name);
-      }
-      setStatus(keyName.toLowerCase(), '✓ actualizado '+ new Date().toLocaleString('es-CO'), 'ok');
-    } catch(err){
-      console.error(err);
-      setStatus(keyName.toLowerCase(), 'Error: '+err.message, 'err');
-    }
-  };
-  reader.onerror = function(){ setStatus(keyName.toLowerCase(), 'No se pudo leer el archivo.', 'err'); };
-  reader.readAsArrayBuffer(file);
-}
-
-// ---------- initial static charts (datos originales, última semana disponible) ----------
-makeDoughnut('chartTransp', ['MAKAND','ARSITRANS','POLAR'], [23,17,11], ['#2F6F4E','#BE8A2E','#B5453A']);
-makeDoughnut('chartTiendas', ['No cumple','Cumple','Cumple parcial'], [69,54,16], ['#B5453A','#2F6F4E','#BE8A2E']);
-makeHBar('chartAgri', ['Diego','Ferrucas','Gabriel','Georgeth','José T.','Lechugas'],
-  [16.7,65.9,0,0,0,100], ['#B5453A','#2F6F4E','#B5453A','#B5453A','#B5453A','#2F6F4E']);
-
-const MAKAND_WEEKS = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28];
-const MAKAND_TOTAL = [24,53,49,49,51,45,56,53,51,57,57,58,58,49,62,67,55,60,63,61,60,64,57,58,58,65,56,51];
-const MAKAND_LLEGADA = [100.0,100.0,100.0,100.0,100.0,100.0,100.0,100.0,100.0,100.0,100.0,100.0,100.0,100.0,100.0,100.0,100.0,93.3,73.0,75.4,85.0,79.7,82.5,81.0,79.3,76.9,91.1,74.5];
-makeLine('chartMakandTrend', MAKAND_WEEKS.map(w=>'S'+w), [
-  { label:'Viajes totales', data:MAKAND_TOTAL, borderColor:'#223A57', backgroundColor:'#223A57', tension:.3, yAxisID:'y' },
-  { label:'% Cumplimiento llegada', data:MAKAND_LLEGADA, borderColor:'#2F6F4E', backgroundColor:'#2F6F4E', tension:.3, borderDash:[4,3], yAxisID:'y1' }
-], true);
-
-const TIENDAS_WEEKS = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28];
-const TIENDAS_CUMPLE = [32.5,38.9,37.1,32.0,39.6,40.1,42.6,40.0,43.3,35.1,39.5,36.8,38.6,29.7,40.3,40.3,40.1,27.0,33.5,39.6,32.2,31.5,34.3,38.2,31.0,31.0,34.3,38.8];
-const TIENDAS_PARCIAL = [25.0,13.0,16.9,13.6,11.9,11.2,13.2,15.2,7.8,16.0,12.0,10.4,11.1,12.3,13.1,10.0,7.8,14.3,11.3,10.7,15.6,13.2,14.3,9.8,10.3,12.5,14.8,11.5];
-const TIENDAS_NOCUMPLE = [42.5,48.1,46.0,54.4,48.5,48.7,44.1,44.8,48.9,48.9,48.5,52.7,50.3,58.0,46.6,49.8,50.0,56.6,55.2,49.7,52.2,55.3,51.4,52.0,58.7,56.5,51.0,49.6];
-makeLine('chartTiendasTrend', TIENDAS_WEEKS.map(w=>'S'+w), [
-  { label:'% Cumple', data:TIENDAS_CUMPLE, borderColor:'#2F6F4E', backgroundColor:'#2F6F4E', tension:.3 },
-  { label:'% Cumple parcial', data:TIENDAS_PARCIAL, borderColor:'#BE8A2E', backgroundColor:'#BE8A2E', tension:.3 },
-  { label:'% No cumple', data:TIENDAS_NOCUMPLE, borderColor:'#B5453A', backgroundColor:'#B5453A', tension:.3 }
-], false);
-
-makeLine('chartAgriTrend', ['S22','S23'], [
-  { label:'% Cumple llegada', data:[71.6,54.3], borderColor:'#223A57', backgroundColor:'#223A57', tension:.3 },
-  { label:'% Cumple tiempo en finca', data:[43.2,23.4], borderColor:'#BE8A2E', backgroundColor:'#BE8A2E', tension:.3 },
-  { label:'% Cumple llegada a planta', data:[6.9,0.0], borderColor:'#B5453A', backgroundColor:'#B5453A', tension:.3 }
-], false);
-
-const MAKAND_MESES = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO'];
-const MAKAND_MES_TOTAL = [226,205,253,255,266,258,84];
-const MAKAND_MES_LLEGADA = [100.0,100.0,100.0,100.0,77.8,80.6,82.1];
-renderMonthly('chartMakandMes','tableMakandMes', MAKAND_MESES, MAKAND_MES_TOTAL, MAKAND_MES_LLEGADA, 'Viajes', '% Cumple llegada');
-
-const TIENDAS_MESES = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO'];
-const TIENDAS_MES_TOTAL = [877,813,854,803,864,857,284];
-const TIENDAS_MES_CUMPLE = [36.7,41.9,37.2,36.9,33.6,33.0,39.4];
-renderMonthly('chartTiendasMes','tableTiendasMes', TIENDAS_MESES, TIENDAS_MES_TOTAL, TIENDAS_MES_CUMPLE, 'Registros', '% Cumple');
-
-</script>
-
-</body>
-</html>
