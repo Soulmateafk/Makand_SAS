@@ -45,7 +45,7 @@ Chart.defaults.font.size = 10;
       type: 'doughnut',
       data: {
         labels,
-        datasets: [{ data, backgroundColor: colors, borderColor: '#FFFEFB', borderWidth: 3 }]
+        datasets: [{ data, backgroundColor: colors, borderColor: '#1a1045', borderWidth: 3 }]
       },
       options: {
         plugins: {
