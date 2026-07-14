@@ -22,9 +22,9 @@ export class DashSemanalComponent implements AfterViewInit {
 
   constructor(private router: Router) {
     // Configuración de los estilos por defecto de Chart.js
-    Chart.defaults.color = '#8B7E6C';
-    Chart.defaults.font.family = "'Space Mono', monospace";
-    Chart.defaults.font.size = 11;
+    Chart.defaults.color = '#94A3B8'; // <-- Antes era '#8B7E6C'
+Chart.defaults.font.family = "'Space Mono', monospace";
+Chart.defaults.font.size = 10;
 
     // Vinculación explícita al objeto global window para mantener compatibilidad con onchange="handleUpload(...)" del HTML
     (window as any).handleUpload = (evt: any, kind: string) => this.handleUpload(evt, kind);
