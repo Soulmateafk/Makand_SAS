@@ -33,5 +33,5 @@ export const routes: Routes = [
   { path: 'combustible', component: CombustibleComponent, canActivate: [authGuard] },
   { path: 'mapa', component: MapaEntregasComponent, canActivate: [authGuard] },
   { path: 'dash-entregas', component: DashexcComponent, canActivate: [authGuard] },
-  { path: 'reporte-semanal', component: reporteComponent, canActivate: [authGuard] }
+  { path: 'reporte-semanal', component: ReporteComponent, canActivate: [authGuard] }
 ];
