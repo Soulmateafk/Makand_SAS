@@ -1,352 +1,243 @@
-/* ==========================================================================
-   VARIABLES DE DISEÑO - PALETA DARK MODE (Logística Premium)
-   ========================================================================== */
-:host {
-  --bg-main: #0b0f19;       /* Negro/Azul oscuro profundo para el fondo */
-  --bg-card: #131c2e;       /* Gris azulado oscuro para las tarjetas */
-  --border-color: #1e293b;  /* Bordes oscuros integrados */
-  
-  /* Tintas de Texto Invertidas para Alta Legibilidad */
-  --ink-main: #f8fafc;      /* Blanco grisáceo principal */
-  --ink-muted: #94a3b8;     /* Gris claro para secundarios */
-  --ink-dim: #64748b;       /* Gris medio para datos menos relevantes */
+  :root{
+    --bg: #F6F1E6;
+    --panel: #FFFEFB;
+    --panel-2: #FBF6EC;
+    --line: #E4DAC3;
+    --ink: #2B2620;
+    --ink-dim: #8B7E6C;
+    --green: #2F6F4E;
+    --green-bg: rgba(47,111,78,.10);
+    --ochre: #BE8A2E;
+    --ochre-bg: rgba(190,138,46,.13);
+    --brick: #B5453A;
+    --brick-bg: rgba(181,69,58,.11);
+    --navy: #223A57;
+    --font-display: 'Fraunces', serif;
+    --font-body: 'Inter', sans-serif;
+    --font-mono: 'Space Mono', monospace;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background:var(--bg);
+    background-image: repeating-linear-gradient(180deg, transparent 0 39px, rgba(43,38,32,0.035) 39px 40px);
+    color:var(--ink);
+    font-family:var(--font-body);
+    line-height:1.45;
+    padding-bottom:50px;
+  }
+  header.top{
+    padding:44px 6vw 30px;
+    border-bottom:2px solid var(--ink);
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    gap:24px;
+    flex-wrap:wrap;
+  }
+  header.top .headline .eyebrow{
+    font-family:var(--font-mono);
+    font-size:12px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--navy);
+  }
+  header.top h1{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:clamp(30px,4.2vw,50px);
+    margin-top:8px;
+    color:var(--ink);
+  }
+  header.top p{
+    color:var(--ink-dim);
+    margin-top:10px;
+    max-width:560px;
+    font-size:14.5px;
+  }
+  .week-dial{
+    display:flex;
+    flex-direction:column;
+    align-items:flex-end;
+    gap:8px;
+  }
+  .week-dial .days{
+    display:flex;
+    gap:5px;
+  }
+  .week-dial .days span{
+    width:9px; height:9px; border-radius:50%;
+    background:var(--line);
+    display:inline-block;
+  }
+  .week-dial .days span.on{ background:var(--green); }
+  .week-dial .caption{
+    font-family:var(--font-mono);
+    font-size:10.5px;
+    color:var(--ink-dim);
+    letter-spacing:.05em;
+  }
 
-  /* Colores de Estado Vibrantes (Ajustados para fondos oscuros) */
-  --brand-blue: #3b82f6;
-  --state-teal: #14b8a6;
-  --state-amber: #f59e0b;
-  --state-red: #ef4444;
-  
-  /* Fondos sutiles con transparencia para los Badges/Pills */
-  --state-bg-teal: rgba(20, 184, 166, 0.15);
-  --state-bg-amber: rgba(245, 158, 11, 0.15);
-  --state-bg-red: rgba(239, 68, 68, 0.15);
-}
+  .section{
+    padding:48px 6vw;
+    border-bottom:1px solid var(--line);
+  }
+  .section:last-of-type{border-bottom:none;}
 
-/* Base de tipografía y reset sutil para el componente */
-* {
-  box-sizing: border-box;
-  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-}
+  .section-head{
+    display:flex;
+    align-items:center;
+    gap:18px;
+    margin-bottom:26px;
+    flex-wrap:wrap;
+  }
+  .week-tab{
+    font-family:var(--font-mono);
+    font-size:13px;
+    font-weight:700;
+    color:var(--panel);
+    background:var(--navy);
+    padding:6px 13px;
+    border-radius:3px 3px 8px 3px;
+    position:relative;
+    letter-spacing:.03em;
+  }
+  .section-head h2{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:clamp(21px,2.4vw,29px);
+  }
+  .upload-box{
+    margin-left:auto;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .src{
+    font-family:var(--font-mono);
+    font-size:11px;
+    color:var(--ink-dim);
+  }
+  .upload-btn{
+    font-family:var(--font-body);
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--panel);
+    background:var(--ink);
+    border:none;
+    padding:8px 16px;
+    border-radius:20px;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .upload-btn:hover{ background:var(--navy); }
+  .upload-status{
+    font-family:var(--font-mono);
+    font-size:11px;
+    color:var(--ink-dim);
+  }
+  .upload-status.ok{color:var(--green);}
+  .upload-status.err{color:var(--brick);}
 
-:host {
-  display: block;
-  background-color: var(--bg-main);
-  color: var(--ink-main);
-  min-height: 100vh;
-  padding: 0 0 24px 0; /* Reducido de 40px */
-}
+  .section-note{
+    font-size:13.5px;
+    color:var(--ink-dim);
+    margin-bottom:26px;
+    max-width:720px;
+  }
 
-/* LINEA DE RUTA (Detalle visual superior estilo carretera) */
-.roadline {
-  height: 4px; /* Reducido de 6px */
-  background: linear-gradient(90deg, var(--brand-blue) 0%, var(--state-teal) 50%, var(--state-amber) 100%);
-  width: 100%;
-}
+  .kpi-row{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+    gap:16px;
+    margin-bottom:30px;
+  }
+  .kpi{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-left:3px solid var(--navy);
+    border-radius:4px;
+    padding:16px 18px;
+  }
+  .kpi .label{
+    font-family:var(--font-mono);
+    font-size:10.5px;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color:var(--ink-dim);
+  }
+  .kpi .value{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:clamp(24px,2.6vw,33px);
+    margin-top:4px;
+    color:var(--ink);
+  }
+  .kpi .sub{
+    font-size:11.5px;
+    color:var(--ink-dim);
+    margin-top:2px;
+    font-family:var(--font-mono);
+  }
+  .green{color:var(--green);}
+  .ochre{color:var(--ochre);}
+  .brick{color:var(--brick);}
 
-/* ==========================================================================
-   HEADER DE OPERACIONES
-   ========================================================================== */
-header.top {
-  padding: 24px 4%; /* Reducido de 40px */
-  background: var(--bg-card);
-  border-bottom: 1px solid var(--border-color);
-  margin-bottom: 24px; /* Reducido de 32px */
-}
+  .grid-2{
+    display:grid;
+    grid-template-columns:1.05fr 1fr;
+    gap:24px;
+  }
+  @media (max-width:880px){ .grid-2{grid-template-columns:1fr;} }
 
-header.top .eyebrow {
-  display: inline-block;
-  font-size: 0.7rem; /* Ligeramente más pequeño */
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--brand-blue);
-  background: rgba(59, 130, 246, 0.15);
-  padding: 4px 8px;
-  border-radius: 4px;
-  margin-bottom: 8px; /* Reducido */
-}
+  .card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:22px 24px;
+  }
+  .card h3{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:15.5px;
+    color:var(--ink);
+    margin-bottom:16px;
+  }
+  .chart-wrap{position:relative; height:250px;}
 
-header.top h1 {
-  font-size: 1.7rem; /* Reducido de 2.2rem */
-  font-weight: 800;
-  margin: 0 0 6px 0;
-  letter-spacing: -0.02em;
-}
+  table{ width:100%; border-collapse:collapse; font-size:13px; }
+  th{
+    text-align:left;
+    font-family:var(--font-mono);
+    font-size:10px;
+    letter-spacing:.05em;
+    text-transform:uppercase;
+    color:var(--ink-dim);
+    padding:8px 10px;
+    border-bottom:2px solid var(--ink);
+  }
+  td{
+    padding:9px 10px;
+    border-bottom:1px solid var(--line);
+  }
+  td.name{font-weight:600;}
+  tr:last-child td{border-bottom:none;}
+  .pill{
+    display:inline-block;
+    padding:2px 10px;
+    border-radius:3px;
+    font-size:11px;
+    font-family:var(--font-mono);
+    font-weight:700;
+  }
+  .pill.good{background:var(--green-bg); color:var(--green);}
+  .pill.mid{background:var(--ochre-bg); color:var(--ochre);}
+  .pill.bad{background:var(--brick-bg); color:var(--brick);}
+  .legend-dot{ display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px; }
 
-header.top p {
-  color: var(--ink-muted);
-  margin: 0;
-  font-size: 0.9rem; /* Reducido de 1rem */
-  max-width: 700px;
-  line-height: 1.4;
-}
-
-/* ==========================================================================
-   SECCIONES PRINCIPALES
-   ========================================================================== */
-.section {
-  max-width: 94%; /* Un poco más ancho para aprovechar pantalla */
-  margin: 0 auto 32px auto; /* Reducido de 48px */
-  background: transparent;
-}
-
-.section-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 12px;
-  border-bottom: 2px solid var(--border-color);
-  padding-bottom: 8px;
-  margin-bottom: 6px;
-}
-
-.section-head h2 {
-  font-size: 1.25rem; /* Reducido de 1.5rem */
-  font-weight: 700;
-  margin: 0;
-  flex-grow: 1;
-}
-
-.section-num {
-  font-size: 1.1rem; /* Reducido de 1.25rem */
-  font-weight: 800;
-  color: var(--ink-muted);
-  background: var(--border-color);
-  padding: 2px 6px;
-  border-radius: 6px;
-}
-
-.section-note {
-  font-size: 0.8rem;
-  color: var(--ink-muted);
-  margin: 0 0 16px 0; /* Reducido de 20px */
-  font-style: italic;
-}
-
-/* ==========================================================================
-   CAJA DE CARGA DE ARCHIVOS (UPLOAD-BOX)
-   ========================================================================== */
-.upload-box {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: var(--bg-card);
-  padding: 4px 10px; /* Más compacto */
-  border-radius: 6px;
-  border: 1px solid var(--border-color);
-}
-
-.upload-box .src {
-  font-size: 0.75rem;
-  color: var(--ink-muted);
-  max-width: 180px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.upload-btn {
-  background: var(--brand-blue);
-  color: #fff;
-  font-size: 0.75rem;
-  font-weight: 600;
-  padding: 6px 12px; /* Más compacto */
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  user-select: none;
-}
-
-.upload-btn:hover {
-  background: #2563eb;
-}
-
-.upload-btn.loading {
-  opacity: 0.6;
-  pointer-events: none;
-  position: relative;
-  animation: pulseLoading 1.5s infinite;
-}
-
-.upload-status {
-  font-size: 0.7rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  padding: 3px 6px;
-  border-radius: 4px;
-}
-
-/* Estados de carga en Dark Mode */
-.upload-status.exito { background: var(--state-bg-teal); color: var(--state-teal); }
-.upload-status.error { background: var(--state-bg-red); color: var(--state-red); }
-.upload-status.pendiente { background: var(--border-color); color: var(--ink-muted); }
-
-/* ==========================================================================
-   FILA DE INDICADORES (KPI CARD ROW)
-   ========================================================================== */
-.kpi-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* Tarjetas más pequeñas */
-  gap: 12px; /* Reducido de 16px */
-  margin-bottom: 20px;
-}
-
-.kpi {
-  background: var(--bg-card);
-  border-radius: 8px;
-  padding: 14px 16px; /* Reducido de 20px */
-  border: 1px solid var(--border-color);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-
-.kpi .label {
-  font-size: 0.75rem; /* Reducido de 0.8rem */
-  font-weight: 600;
-  color: var(--ink-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
-}
-
-.kpi .value {
-  font-size: 1.5rem; /* Reducido de 1.8rem */
-  font-weight: 800;
-  margin: 6px 0 2px 0; /* Reducido */
-  color: var(--ink-main);
-  line-height: 1.1;
-}
-
-.kpi .sub {
-  font-size: 0.7rem;
-  color: var(--ink-dim);
-}
-
-.kpi .value.teal { color: var(--state-teal); }
-.kpi .value.amber { color: var(--state-amber); }
-.kpi .value.red { color: var(--state-red); }
-
-/* ==========================================================================
-   TARJETAS Y CONTENEDORES DE GRÁFICAS
-   ========================================================================== */
-.grid-2 {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); /* Permite colapsar antes */
-  gap: 16px; /* Reducido de 24px */
-  margin-bottom: 20px;
-}
-
-@media(max-width: 500px) {
-  .grid-2 { grid-template-columns: 1fr; }
-}
-
-.card {
-  background: var(--bg-card);
-  border-radius: 8px;
-  padding: 16px; /* Reducido de 24px */
-  border: 1px solid var(--border-color);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
-}
-
-.card h3 {
-  font-size: 0.95rem; /* Reducido de 1.05rem */
-  font-weight: 700;
-  margin: 0 0 12px 0; /* Reducido de 20px */
-  color: var(--ink-main);
-  border-left: 3px solid var(--brand-blue);
-  padding-left: 8px;
-}
-
-.chart-wrap {
-  position: relative;
-  width: 100%;
-  height: 180px; /* Reducido de 220px para hacer el gráfico más compacto */
-}
-
-.chart-wrap.tall {
-  height: 240px; /* Reducido de 280px */
-}
-
-/* ==========================================================================
-   TABLAS DE DATOS LOGÍSTICOS (Ajustadas para fondo oscuro y más compactas)
-   ========================================================================== */
-table {
-  width: 100%;
-  border-collapse: collapse;
-  text-align: left;
-  font-size: 0.8rem; /* Reducido de 0.9rem */
-}
-
-table thead tr {
-  background: #1e293b; 
-  border-bottom: 2px solid var(--border-color);
-}
-
-table th {
-  padding: 8px 10px; /* Reducido de 12px 14px */
-  font-weight: 600;
-  color: var(--ink-main);
-  text-transform: uppercase;
-  font-size: 0.7rem;
-  letter-spacing: 0.05em;
-}
-
-table tbody tr {
-  border-bottom: 1px solid var(--border-color);
-  transition: background 0.15s ease;
-}
-
-table tbody tr:hover {
-  background: rgba(255, 255, 255, 0.03); 
-}
-
-table td {
-  padding: 8px 10px; /* Celda más compacta */
-  color: var(--ink-muted);
-  vertical-align: middle;
-}
-
-table td.name {
-  font-weight: 600;
-  color: var(--ink-main);
-}
-
-/* BADGES / PILLS DE RENDIMIENTO VIAJE */
-.pill {
-  display: inline-block;
-  font-size: 0.7rem; /* Reducido */
-  font-weight: 700;
-  padding: 3px 8px;
-  border-radius: 20px;
-  text-align: center;
-}
-
-.pill.cumple, .pill.teal-kpi { background: var(--state-bg-teal); color: var(--state-teal); }
-.pill.parcial, .pill.amber-kpi { background: var(--state-bg-amber); color: var(--state-amber); }
-.pill.nocumple, .pill.red-kpi { background: var(--state-bg-red); color: var(--state-red); }
-
-/* ==========================================================================
-   FOOTER
-   ========================================================================== */
-footer {
-  text-align: center;
-  padding: 24px 0 10px 0; /* Reducido de 40px */
-  margin-top: 24px;
-  border-top: 1px solid var(--border-color);
-}
-
-footer p {
-  font-size: 0.75rem;
-  color: var(--ink-dim);
-  margin: 0;
-}
-
-/* ANIMACIONES */
-@keyframes pulseLoading {
-  0% { opacity: 0.6; }
-  50% { opacity: 0.3; }
-  100% { opacity: 0.6; }
-}
+  footer{
+    padding:30px 6vw 10px;
+    font-family:var(--font-mono);
+    font-size:11px;
+    color:var(--ink-dim);
+  }
