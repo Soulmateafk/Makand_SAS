@@ -105,7 +105,7 @@ interface AgriData {
   selector: 'app-reporte-semanal',
   standalone: true,
   imports: [CommonModule],
-  templateUrl: './reporte-semanal.component.html',
+  templateUrl: './reporte_semanal_operaciones.html',
   styleUrl: './reporte-semanal.component.css'
 })
 export class ReporteSemanalComponent implements AfterViewInit {
