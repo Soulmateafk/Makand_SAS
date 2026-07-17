@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <title>Reporte Semanal de Operaciones</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" onerror="window.__libsFailed=true"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" onerror="window.__libsFailed=true"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
@@ -254,6 +254,10 @@
 </style>
 </head>
 <body>
+<div id="libErrorBanner" style="display:none; background:#B5453A; color:#fff; padding:14px 6vw; font-family:'IBM Plex Sans','Inter',sans-serif; font-size:14px; text-align:center;">
+  ⚠️ No se pudieron cargar las librerías necesarias (Chart.js / xlsx) desde internet. El diseño se ve, pero las gráficas y tablas de resumen no van a funcionar.
+  Esto suele pasar cuando un firewall, antivirus o filtro de red corporativo bloquea <b>cdn.jsdelivr.net</b>. Prueba abrir este archivo con otra red (ej. datos móviles) para confirmarlo, o pide a tu área de sistemas que permita ese dominio.
+</div>
 
 <header class="top">
   <div class="headline">
@@ -477,6 +481,10 @@
 </footer>
 
 <script>
+if (window.__libsFailed || typeof Chart === 'undefined' || typeof XLSX === 'undefined') {
+  document.getElementById('libErrorBanner').style.display = 'block';
+  throw new Error('Chart.js o XLSX no cargaron desde internet. Revisa tu conexión o firewall de red.');
+}
 Chart.defaults.color = '#8B7E6C';
 Chart.defaults.font.family = "'Space Mono', monospace";
 Chart.defaults.font.size = 11;
