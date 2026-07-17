@@ -88,21 +88,24 @@ interface TrendAgri {
   planta: (number | null)[];
 }
 
+interface MetricStat { avg: number | null; count: number; }
+
 interface AgriData {
   weekLabel: string;
   agricultores: AgricultorRow[];
   totalViajes: number;
-  avgLlegada: number | null;
-  avgTiempo: number | null;
-  avgPlanta: number | null;
+  llegada: MetricStat;
+  tiempo: MetricStat;
+  planta: MetricStat;
   trend: TrendAgri;
+  monthly: MonthlyData | null;
 }
 
 @Component({
   selector: 'app-reporte-semanal',
   standalone: true,
   imports: [CommonModule],
-  templateUrl: './reporte_semanal_operaciones.html',
+  templateUrl: './reporte-semanal.component.html',
   styleUrl: './reporte-semanal.component.css'
 })
 export class ReporteSemanalComponent implements AfterViewInit {
@@ -116,6 +119,7 @@ export class ReporteSemanalComponent implements AfterViewInit {
   @ViewChild('chartTiendasMes') chartTiendasMesRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('chartAgri') chartAgriRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('chartAgriTrend') chartAgriTrendRef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('chartAgriMes') chartAgriMesRef!: ElementRef<HTMLCanvasElement>;
 
   private charts: Record<string, Chart> = {};
 
@@ -348,7 +352,7 @@ export class ReporteSemanalComponent implements AfterViewInit {
     });
 
     const total = rowsWeek.length;
-    const topRegiones = Object.keys(regionMap).sort((a, b) => regionMap[b].total - regionMap[a].total).slice(0, 5);
+    const topRegiones = Object.keys(regionMap).sort((a, b) => regionMap[b].total - regionMap[a].total).slice(0, 10);
     const cedis = Object.keys(cediMap).sort((a, b) => cediMap[b] - cediMap[a]);
 
     // ---- tendencia: TODAS las semanas ----
@@ -395,93 +399,117 @@ export class ReporteSemanalComponent implements AfterViewInit {
   //  PARSER 3: ON TIME AGRICULTORES
   // =========================================================
   private parseAgri(wb: XLSX.WorkBook): AgriData {
-    const sheetName = this.findSheet(wb, ['RESUMEN']);
-    if (!sheetName) throw new Error('No encontré la hoja "RESUMEN" en este archivo.');
+    const sheetName = this.findSheet(wb, ['TIEMPO AGRICULTORES']);
+    if (!sheetName) throw new Error('No encontré la hoja "TIEMPO AGRICULTORES" en este archivo.');
     const rows = this.sheetRows(wb, sheetName);
+    const header = rows[0];
 
-    const norm = (v: any): string => String(v == null ? '' : v).replace(/[\u00A0\u200B]/g, ' ').trim().toUpperCase();
+    const iSem = this.colIndex(header, ['SEMANA', 'SEMANAS']);
+    const iAgricultor = this.colIndex(header, 'AGRICULTOR');
+    const iLlegada = this.colIndex(header, 'CUMPLIMIENTO LLEGADA AGRICULTOR');
+    const iTiempo = this.colIndex(header, 'CUMPLIMIENTO TIEMPO EN AGRICULTOR');
+    const iPlanta = this.colIndex(header, 'CUMPLIMIENTO LLEGADA A PLANTA');
+    const iMes = this.colIndex(header, 'MES');
+    if (iSem < 0 || iAgricultor < 0) throw new Error('No encontré las columnas SEMANA/AGRICULTOR esperadas en "TIEMPO AGRICULTORES".');
 
-    let headerRow = -1, headerCol = -1;
-    for (let i = 0; i < rows.length && headerRow < 0; i++) {
-      const row = rows[i];
-      if (!row) continue;
-      for (let c = 0; c < row.length; c++) {
-        if (norm(row[c]) === 'AGRICULTOR') { headerRow = i; headerCol = c; break; }
-      }
-    }
-    if (headerRow < 0) throw new Error('No encontré la tabla "Agricultor" en la hoja RESUMEN. Puede que la hoja haya cambiado de estructura.');
-    const weekRow = rows[headerRow + 1];
-    const weekCols: number[] = [];
-    for (let c = headerCol + 2; c < weekRow.length; c++) {
-      if (weekRow[c] !== null && weekRow[c] !== undefined && weekRow[c] !== '') weekCols.push(c);
-    }
-    if (!weekCols.length) throw new Error('No encontré columnas de semana (S..) en RESUMEN.');
-    const nWeeks = Math.floor(weekCols.length / 3);
-    const llegadaCols = weekCols.slice(0, nWeeks);
-    const tiempoCols = weekCols.slice(nWeeks, 2 * nWeeks);
-    const plantaCols = weekCols.slice(2 * nWeeks, 3 * nWeeks);
-    const lastWeekCol = llegadaCols[llegadaCols.length - 1];
-    const lastTiempoCol = tiempoCols[tiempoCols.length - 1];
-    const lastPlantaCol = plantaCols[plantaCols.length - 1];
-    const weekLabelRaw = weekRow[lastWeekCol];
-
-    const toPct = (v: any): number | null => {
-      if (v === null || v === undefined || v === '-') return null;
-      if (typeof v === 'string' && v.trim().endsWith('%')) return parseFloat(v);
-      if (typeof v === 'number') return v <= 1 ? v * 100 : v;
-      return null;
+    const EXCLUIR = ['LECHUGAS DEL DIA', 'LECHUGAS DEL DÍA'];
+    const normName = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toUpperCase();
+    const displayName = (raw: string): string => {
+      const n = normName(raw);
+      if (n.startsWith('FERRUCAS')) return 'FERRUCAS';
+      return String(raw).trim();
     };
 
-    const agricultores: AgricultorRow[] = [];
-    const blockStarts: number[] = [];
-    let r = headerRow + 2;
-    while (r < rows.length) {
-      const name = rows[r] && rows[r][headerCol];
-      if (!name) break;
-      blockStarts.push(r);
-      const totalViajes = rows[r][lastWeekCol];
-      const pctLlegada = toPct(rows[r + 3] ? rows[r + 3][lastWeekCol] : null);
-      const pctTiempo = toPct(rows[r + 3] ? rows[r + 3][lastTiempoCol] : null);
-      const pctPlanta = toPct(rows[r + 3] ? rows[r + 3][lastPlantaCol] : null);
-      if (typeof totalViajes === 'number') {
-        agricultores.push({ name: String(name).trim(), viajes: totalViajes, pctLlegada, pctTiempo, pctPlanta });
-      }
-      r += 4;
-    }
+    const data = rows.slice(1).filter(r => r && r[iSem] !== null && r[iAgricultor] && !EXCLUIR.includes(normName(r[iAgricultor])));
 
-    const totalViajes = agricultores.reduce((s, a) => s + a.viajes, 0);
-    const weighted = (key: 'pctLlegada' | 'pctTiempo' | 'pctPlanta'): number | null => {
-      let num = 0, den = 0;
-      agricultores.forEach(a => { if (a[key] !== null) { num += (a[key] as number) * a.viajes; den += a.viajes; } });
-      return den ? num / den : null;
+    const counts: Record<number, number> = {};
+    data.forEach(r => { const w = Number(r[iSem]); counts[w] = (counts[w] || 0) + 1; });
+    const week = this.pickLatestWeek(counts);
+    const rowsWeek = data.filter(r => Number(r[iSem]) === week);
+
+    // ---- por agricultor (agrupando FERRUCAS N -> FERRUCAS) ----
+    interface AgriAgg { viajes: number; llegadaOk: number; llegadaTot: number; tiempoOk: number; tiempoTot: number; plantaOk: number; plantaTot: number; }
+    const agriMap: Record<string, AgriAgg> = {};
+    rowsWeek.forEach(r => {
+      const name = displayName(r[iAgricultor]);
+      if (!agriMap[name]) agriMap[name] = { viajes: 0, llegadaOk: 0, llegadaTot: 0, tiempoOk: 0, tiempoTot: 0, plantaOk: 0, plantaTot: 0 };
+      agriMap[name].viajes++;
+      const vL = iLlegada >= 0 ? String(r[iLlegada] || '').trim().toUpperCase() : '';
+      if (vL === 'CUMPLE' || vL === 'NO CUMPLE') { agriMap[name].llegadaTot++; if (vL === 'CUMPLE') agriMap[name].llegadaOk++; }
+      const vT = iTiempo >= 0 ? String(r[iTiempo] || '').trim().toUpperCase() : '';
+      if (vT === 'CUMPLE' || vT === 'NO CUMPLE') { agriMap[name].tiempoTot++; if (vT === 'CUMPLE') agriMap[name].tiempoOk++; }
+      const vP = iPlanta >= 0 ? String(r[iPlanta] || '').trim().toUpperCase() : '';
+      if (vP === 'CUMPLE' || vP === 'NO CUMPLE') { agriMap[name].plantaTot++; if (vP === 'CUMPLE') agriMap[name].plantaOk++; }
+    });
+
+    const agricultores: AgricultorRow[] = Object.keys(agriMap)
+      .sort((a, b) => agriMap[b].viajes - agriMap[a].viajes)
+      .map(name => {
+        const m = agriMap[name];
+        return {
+          name, viajes: m.viajes,
+          pctLlegada: m.llegadaTot ? m.llegadaOk / m.llegadaTot * 100 : null,
+          pctTiempo: m.tiempoTot ? m.tiempoOk / m.tiempoTot * 100 : null,
+          pctPlanta: m.plantaTot ? m.plantaOk / m.plantaTot * 100 : null
+        };
+      });
+
+    const totalViajes = rowsWeek.length;
+
+    const statFrom = (field: number): MetricStat => {
+      let ok = 0, tot = 0;
+      rowsWeek.forEach(r => {
+        const v = String(r[field] || '').trim().toUpperCase();
+        if (v === 'CUMPLE' || v === 'NO CUMPLE') { tot++; if (v === 'CUMPLE') ok++; }
+      });
+      return { avg: tot ? ok / tot * 100 : null, count: ok };
     };
 
-    // ---- tendencia: TODAS las semanas, con el denominador propio de cada métrica ----
-    const weekSeries = (cols: number[]): (number | null)[] => {
-      return cols.map(col => {
-        let num = 0, den = 0;
-        blockStarts.forEach(r0 => {
-          const totalV = rows[r0][col];
-          if (typeof totalV !== 'number') return;
-          let cumple = rows[r0 + 1] ? rows[r0 + 1][col] : null;
-          if (typeof cumple !== 'number') cumple = 0;
-          num += cumple; den += totalV;
+    // ---- tendencia: TODAS las semanas ----
+    const allWeeks = [...new Set(data.map(r => Number(r[iSem])))].sort((a, b) => a - b);
+    const trendSeries = (field: number): (number | null)[] => {
+      return allWeeks.map(w => {
+        const rw = data.filter(r => Number(r[iSem]) === w);
+        let ok = 0, tot = 0;
+        rw.forEach(r => {
+          const v = String(r[field] || '').trim().toUpperCase();
+          if (v === 'CUMPLE' || v === 'NO CUMPLE') { tot++; if (v === 'CUMPLE') ok++; }
         });
-        return den ? num / den * 100 : null;
+        return tot ? ok / tot * 100 : null;
       });
     };
-    const weekLabels = llegadaCols.map(c => String(weekRow[c]).replace(/[^0-9]/g, ''));
     const trend: TrendAgri = {
-      weeks: weekLabels,
-      llegada: weekSeries(llegadaCols),
-      tiempo: weekSeries(tiempoCols),
-      planta: weekSeries(plantaCols)
+      weeks: allWeeks.map(String),
+      llegada: trendSeries(iLlegada),
+      tiempo: trendSeries(iTiempo),
+      planta: trendSeries(iPlanta)
     };
 
+    // ---- resumen mensual ----
+    let monthly: MonthlyData | null = null;
+    if (iMes >= 0) {
+      const mesesPresentes = [...new Set(data.map(r => String(r[iMes]).trim().toUpperCase()))]
+        .filter(m => this.MESES_ORDER.includes(m))
+        .sort((a, b) => this.MESES_ORDER.indexOf(a) - this.MESES_ORDER.indexOf(b));
+      const totalPorMes: number[] = [];
+      const llegadaPorMes: (number | null)[] = [];
+      mesesPresentes.forEach(m => {
+        const rm = data.filter(r => String(r[iMes]).trim().toUpperCase() === m);
+        totalPorMes.push(rm.length);
+        let ok = 0, tot = 0;
+        rm.forEach(r => {
+          const v = String(r[iLlegada] || '').trim().toUpperCase();
+          if (v === 'CUMPLE' || v === 'NO CUMPLE') { tot++; if (v === 'CUMPLE') ok++; }
+        });
+        llegadaPorMes.push(tot ? ok / tot * 100 : null);
+      });
+      monthly = { meses: mesesPresentes, total: totalPorMes, pct: llegadaPorMes };
+    }
+
     return {
-      weekLabel: String(weekLabelRaw || ''), agricultores, totalViajes,
-      avgLlegada: weighted('pctLlegada'), avgTiempo: weighted('pctTiempo'), avgPlanta: weighted('pctPlanta'),
-      trend
+      weekLabel: String(week ?? ''), agricultores, totalViajes,
+      llegada: statFrom(iLlegada), tiempo: statFrom(iTiempo), planta: statFrom(iPlanta),
+      trend, monthly
     };
   }
 
@@ -582,6 +610,8 @@ export class ReporteSemanalComponent implements AfterViewInit {
       { label: '% Cumple tiempo en finca', data: d.trend.tiempo, borderColor: '#BE8A2E', backgroundColor: '#BE8A2E', tension: .3 },
       { label: '% Cumple llegada a planta', data: d.trend.planta, borderColor: '#B5453A', backgroundColor: '#B5453A', tension: .3 }
     ], false);
+
+    if (d.monthly) this.renderMonthly(this.chartAgriMesRef.nativeElement, 'chartAgriMes', d.monthly, 'Registros', '% Cumple llegada');
   }
 
   // =========================================================
@@ -615,50 +645,69 @@ export class ReporteSemanalComponent implements AfterViewInit {
 
   private datosIniciales_tiendas(): TiendasData {
     return {
-      week: 28, total: 139,
-      dist: { 'CUMPLE': 54, 'CUMPLE PARCIAL': 16, 'NO CUMPLE': 69 },
-      cediMap: { 'Tiendas': 90, 'CEDI 2': 32, 'CEDI 1': 9, 'CEDI ARA': 8 },
-      cedis: ['Tiendas', 'CEDI 2', 'CEDI 1', 'CEDI ARA'],
+      week: 28, total: 213,
+      dist: { 'CUMPLE': 84, 'CUMPLE PARCIAL': 28, 'NO CUMPLE': 101 },
+      cediMap: { 'Tiendas': 140, 'CEDI 2': 46, 'CEDI ARA': 14, 'CEDI 1': 13 },
+      cedis: ['Tiendas', 'CEDI 2', 'CEDI ARA', 'CEDI 1'],
       regionMap: {
-        'PLATAFORMA SIBERIA': { total: 11, cumple: 11 },
-        'OLIMPICA': { total: 6, cumple: 0 },
-        'PLATAFORMA CENCOSUD': { total: 5, cumple: 1 },
-        'D1 TOCANCIPA': { total: 5, cumple: 3 },
-        'JUMBO SANTA ANA': { total: 5, cumple: 0 }
+        'PLATAFORMA SIBERIA': { total: 16, cumple: 16 },
+        'OLIMPICA': { total: 8, cumple: 1 },
+        'ARA COTA': { total: 8, cumple: 1 },
+        'PLATAFORMA CENCOSUD': { total: 7, cumple: 2 },
+        'D1 TOCANCIPA': { total: 7, cumple: 4 },
+        'JUMBO SANTA ANA': { total: 7, cumple: 0 },
+        'D1 SIBATE -': { total: 6, cumple: 0 },
+        'ARA GACHANCIPA': { total: 6, cumple: 0 },
+        'CARULLA PEPE SIERRA': { total: 6, cumple: 2 },
+        'CARULLA SANTA BARBARA': { total: 6, cumple: 0 }
       },
-      topRegiones: ['PLATAFORMA SIBERIA', 'OLIMPICA', 'PLATAFORMA CENCOSUD', 'D1 TOCANCIPA', 'JUMBO SANTA ANA'],
+      topRegiones: ['PLATAFORMA SIBERIA', 'OLIMPICA', 'ARA COTA', 'PLATAFORMA CENCOSUD', 'D1 TOCANCIPA', 'JUMBO SANTA ANA', 'D1 SIBATE -', 'ARA GACHANCIPA', 'CARULLA PEPE SIERRA', 'CARULLA SANTA BARBARA'],
       trend: {
-        weeks: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28],
-        cumple: [32.5,38.9,37.1,32.0,39.6,40.1,42.6,40.0,43.3,35.1,39.5,36.8,38.6,29.7,40.3,40.3,40.1,27.0,33.5,39.6,32.2,31.5,34.3,38.2,31.0,31.0,34.3,38.8],
-        parcial: [25.0,13.0,16.9,13.6,11.9,11.2,13.2,15.2,7.8,16.0,12.0,10.4,11.1,12.3,13.1,10.0,7.8,14.3,11.3,10.7,15.6,13.2,14.3,9.8,10.3,12.5,14.8,11.5],
-        noCumple: [42.5,48.1,46.0,54.4,48.5,48.7,44.1,44.8,48.9,48.9,48.5,52.7,50.3,58.0,46.6,49.8,50.0,56.6,55.2,49.7,52.2,55.3,51.4,52.0,58.7,56.5,51.0,49.6],
-        total: [138,206,201,192,196,194,197,205,197,210,204,184,200,210,104,197,196,199,205,201,197,204,199,201,203,207,210,139]
+        weeks: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29],
+        cumple: [32.5,38.9,37.1,32.0,39.6,40.1,42.6,40.0,43.3,35.1,39.5,36.8,38.6,29.7,40.3,40.3,40.1,27.0,33.5,39.6,32.2,31.5,34.3,38.2,31.0,31.0,34.3,39.4,37.9],
+        parcial: [25.0,13.0,16.9,13.6,11.9,11.2,13.2,15.2,7.8,16.0,12.0,10.4,11.1,12.3,13.1,10.0,7.8,14.3,11.3,10.7,15.6,13.2,14.3,9.8,10.3,12.5,14.8,13.1,10.7],
+        noCumple: [42.5,48.1,46.0,54.4,48.5,48.7,44.1,44.8,48.9,48.9,48.5,52.7,50.3,58.0,46.6,49.8,50.0,56.6,55.2,49.7,52.2,55.3,51.4,52.0,58.7,56.5,51.0,47.4,51.5],
+        total: [138,206,201,192,196,194,197,205,197,210,204,184,200,210,104,197,196,199,205,201,197,204,199,201,203,207,210,213,103]
       },
       monthly: {
         meses: ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO'],
-        total: [877,813,854,803,864,857,284],
-        pct: [36.7,41.9,37.2,36.9,33.6,33.0,39.4]
+        total: [877,813,854,803,864,857,461],
+        pct: [36.7,41.9,37.2,36.9,33.6,33.0,39.3]
       }
     };
   }
 
   private datosIniciales_agri(): AgriData {
     return {
-      weekLabel: 'S23',
+      weekLabel: '28',
       agricultores: [
-        { name: 'Diego', viajes: 6, pctLlegada: 16.7, pctTiempo: 16.7, pctPlanta: 0.0 },
-        { name: 'Ferrucas', viajes: 47, pctLlegada: 65.9, pctTiempo: 0.0, pctPlanta: 0.0 },
-        { name: 'Gabriel', viajes: 7, pctLlegada: 0.0, pctTiempo: 85.7, pctPlanta: 0.0 },
-        { name: 'Georgeth', viajes: 1, pctLlegada: 0.0, pctTiempo: 100.0, pctPlanta: 0.0 },
-        { name: 'José Tibaquicha', viajes: 3, pctLlegada: 0.0, pctTiempo: 33.3, pctPlanta: 0.0 },
-        { name: 'Lechugas del Día', viajes: 6, pctLlegada: 100.0, pctTiempo: 100.0, pctPlanta: null }
+        { name: 'Ferrucas', viajes: 37, pctLlegada: 89.2, pctTiempo: 13.5, pctPlanta: 45.9 },
+        { name: 'Andres Cadena', viajes: 7, pctLlegada: 100.0, pctTiempo: 0.0, pctPlanta: 16.7 },
+        { name: 'Juan Pablo', viajes: 7, pctLlegada: 100.0, pctTiempo: 0.0, pctPlanta: 83.3 },
+        { name: 'Jesús', viajes: 7, pctLlegada: 100.0, pctTiempo: 100.0, pctPlanta: 100.0 },
+        { name: 'Severo', viajes: 7, pctLlegada: 100.0, pctTiempo: 0.0, pctPlanta: 0.0 },
+        { name: 'Wilson', viajes: 7, pctLlegada: 100.0, pctTiempo: 0.0, pctPlanta: 33.3 },
+        { name: 'Jose Tibaquicha', viajes: 7, pctLlegada: 71.4, pctTiempo: 16.7, pctPlanta: 33.3 },
+        { name: 'Gabriel', viajes: 6, pctLlegada: 16.7, pctTiempo: 60.0, pctPlanta: 0.0 },
+        { name: 'Diego', viajes: 6, pctLlegada: 16.7, pctTiempo: 40.0, pctPlanta: 0.0 },
+        { name: 'Georgeth', viajes: 2, pctLlegada: 50.0, pctTiempo: 0.0, pctPlanta: 0.0 },
+        { name: 'Mario Acevedo', viajes: 7, pctLlegada: 100.0, pctTiempo: 0.0, pctPlanta: 83.3 },
+        { name: 'Jorge Baracaldo', viajes: 1, pctLlegada: 100.0, pctTiempo: 0.0, pctPlanta: 0.0 }
       ],
-      totalViajes: 70, avgLlegada: 54.3, avgTiempo: 21.4, avgPlanta: 0.0,
+      totalViajes: 101,
+      llegada: { avg: 83.2, count: 84 },
+      tiempo: { avg: 18.5, count: 17 },
+      planta: { avg: 41.3, count: 38 },
       trend: {
-        weeks: ['22', '23'],
-        llegada: [71.6, 54.3],
-        tiempo: [43.2, 23.4],
-        planta: [6.9, 0.0]
+        weeks: ['1','2','13','14','15','16','17','18','19','20','21','22','23','24','25','26','27','28','29'],
+        llegada: [78.6,71.4,74.5,51.3,56.2,40.3,41.3,31.1,33.3,38.1,27.6,44.1,52.5,79.5,73.0,86.0,80.5,83.0,93.1],
+        tiempo: [21.4,28.6,25.5,30.8,34.4,29.0,45.7,27.0,18.9,21.2,24.1,23.0,29.5,25.9,32.2,32.2,23.0,21.6,null],
+        planta: [37.5,53.8,54.3,35.8,35.6,32.2,36.5,27.6,32.7,37.8,34.2,37.2,32.8,32.1,30.4,34.7,41.4,39.2,null]
+      },
+      monthly: {
+        meses: ['ENERO','MARZO','ABRIL','MAYO','JUNIO','JULIO'],
+        total: [40,149,477,543,504,202],
+        pct: [76.2,64.9,45.2,35.5,74.0,84.2]
       }
     };
   }
