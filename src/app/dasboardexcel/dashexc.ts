@@ -808,6 +808,20 @@ export class DashexcComponent implements AfterViewInit {
 
   }
 
+  // Normaliza el valor de una celda "MES": puede venir como texto ('JUNIO'), como
+  // número de mes directo (1-12), o -si la celda está formateada como fecha- como
+  // número de serie de Excel. En los dos últimos casos lo convertimos al nombre del mes.
+  normMes(v: any): string {
+    if (v === null || v === undefined || v === '') return '';
+    if (typeof v === 'number') {
+      if (v >= 1 && v <= 12 && Number.isInteger(v)) return this.MESES_ORDER[v - 1] || '';
+      const utcDays = Math.floor(v - 25569);
+      const d = new Date(utcDays * 86400 * 1000);
+      return this.MESES_ORDER[d.getUTCMonth()] || '';
+    }
+    return String(v).trim().toUpperCase();
+  }
+
   // =========================================================
   // CREADORES DE GRÁFICAS
   // =========================================================
@@ -1663,11 +1677,7 @@ export class DashexcComponent implements AfterViewInit {
       r => {
 
         const m =
-          String(
-            r[iMes]
-          )
-            .trim()
-            .toUpperCase();
+          this.normMes(r[iMes]);
 
         counts[m] =
           (
@@ -1687,11 +1697,7 @@ export class DashexcComponent implements AfterViewInit {
     const rowsMonth =
       data.filter(
         r =>
-          String(
-            r[iMes]
-          )
-            .trim()
-            .toUpperCase() ===
+          this.normMes(r[iMes]) ===
           month
       );
 
@@ -2170,11 +2176,7 @@ export class DashexcComponent implements AfterViewInit {
       r => {
 
         const m =
-          String(
-            r[iMes]
-          )
-            .trim()
-            .toUpperCase();
+          this.normMes(r[iMes]);
 
         counts[m] =
           (
@@ -2194,11 +2196,7 @@ export class DashexcComponent implements AfterViewInit {
     const rowsMonth =
       data.filter(
         r =>
-          String(
-            r[iMes]
-          )
-            .trim()
-            .toUpperCase() ===
+          this.normMes(r[iMes]) ===
           month
       );
 
@@ -2720,11 +2718,7 @@ export class DashexcComponent implements AfterViewInit {
       r => {
 
         const m =
-          String(
-            r[iMes]
-          )
-            .trim()
-            .toUpperCase();
+          this.normMes(r[iMes]);
 
         counts[m] =
           (
@@ -2752,11 +2746,7 @@ export class DashexcComponent implements AfterViewInit {
     const rowsMonth =
       data.filter(
         r =>
-          String(
-            r[iMes]
-          )
-            .trim()
-            .toUpperCase() ===
+          this.normMes(r[iMes]) ===
           month
       );
 
@@ -3069,11 +3059,7 @@ export class DashexcComponent implements AfterViewInit {
         ...new Set(
           data.map(
             r =>
-              String(
-                r[iMes]
-              )
-                .trim()
-                .toUpperCase()
+              this.normMes(r[iMes])
           )
         )
       ]
@@ -3113,11 +3099,7 @@ export class DashexcComponent implements AfterViewInit {
         const registrosMes =
           data.filter(
             r =>
-              String(
-                r[iMes]
-              )
-                .trim()
-                .toUpperCase() ===
+              this.normMes(r[iMes]) ===
               mes
           );
 
