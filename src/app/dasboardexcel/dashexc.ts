@@ -72,25 +72,32 @@ export class DashexcComponent implements AfterViewInit {
   };
 
   agriState: any = {
-    src: 'ON_TIME_AGRICULTORES_2026_ACT.xlsx · Semana 23 (más reciente disponible)',
+    src: 'ON_TIME_AGRICULTORES_2026_ACT.xlsx · JUNIO 2026 (mes más reciente completo)',
     status: '',
     statusClass: '',
-    note: 'Cumplimiento semanal por agricultor en tres momentos del proceso: llegada del transporte, tiempo en finca y llegada a planta.',
-    kpiSemanaLabel: 'semana 23',
-    kpiTotal: '70',
-    kpiTotalSub: '6 agricultores',
-    kpiLlegada: '54.3%',
-    kpiTiempo: '21.4%',
-    kpiPlanta: '0.0%',
-    chartLabel: '(S23)',
-    tableLabel: 'semana 23',
+    note: 'Cumplimiento de 478 registros durante junio, en tres momentos del proceso: llegada del transporte, tiempo en finca y llegada a planta. Los agricultores "FERRUCAS 1" a "FERRUCAS 10" se agrupan en uno solo (FERRUCAS).',
+    kpiSemanaLabel: 'junio 2026',
+    kpiTotal: '478',
+    kpiTotalSub: '15 agricultores',
+    kpiLlegada: '73.4%',
+    kpiTiempo: '25.5%',
+    kpiPlanta: '34.5%',
+    chartLabel: '(junio)',
+    tableLabel: 'junio 2026',
     table: [
-      { name: 'Diego', total: 6, llegada: '16.7%', llegadaClass: 'bad', tiempo: '16.7%', tiempoClass: 'bad', planta: '0.0%', plantaClass: 'bad' },
-      { name: 'Ferrucas', total: 47, llegada: '65.9%', llegadaClass: 'good', tiempo: '0.0%', tiempoClass: 'bad', planta: '0.0%', plantaClass: 'bad' },
-      { name: 'Gabriel', total: 7, llegada: '0.0%', llegadaClass: 'bad', tiempo: '85.7%', tiempoClass: 'good', planta: '0.0%', plantaClass: 'bad' },
-      { name: 'Georgeth', total: 1, llegada: '0.0%', llegadaClass: 'bad', tiempo: '100.0%', tiempoClass: 'good', planta: '0.0%', plantaClass: 'bad' },
-      { name: 'José Tibaquicha', total: 3, llegada: '0.0%', llegadaClass: 'bad', tiempo: '33.3%', tiempoClass: 'mid', planta: '0.0%', plantaClass: 'bad' },
-      { name: 'Lechugas del Día', total: 6, llegada: '100.0%', llegadaClass: 'good', tiempo: '100.0%', tiempoClass: 'good', planta: '—', plantaClass: 'mid' }
+      { name: 'Ferrucas', total: 172, llegada: '72.7%', llegadaClass: 'good', tiempo: '27.9%', tiempoClass: 'bad', planta: '25.3%', plantaClass: 'bad' },
+      { name: 'Andrés Cadena', total: 42, llegada: '90.5%', llegadaClass: 'good', tiempo: '0.0%', tiempoClass: 'bad', planta: '9.5%', plantaClass: 'bad' },
+      { name: 'Wilson', total: 30, llegada: '90.0%', llegadaClass: 'good', tiempo: '0.0%', tiempoClass: 'bad', planta: '60.0%', plantaClass: 'mid' },
+      { name: 'José Tibaquicha', total: 30, llegada: '66.7%', llegadaClass: 'mid', tiempo: '23.3%', tiempoClass: 'bad', planta: '40.0%', plantaClass: 'mid' },
+      { name: 'Mario Acevedo', total: 30, llegada: '90.0%', llegadaClass: 'good', tiempo: '0.0%', tiempoClass: 'bad', planta: '60.0%', plantaClass: 'mid' },
+      { name: 'Juan Pablo', total: 30, llegada: '90.0%', llegadaClass: 'good', tiempo: '0.0%', tiempoClass: 'bad', planta: '80.0%', plantaClass: 'good' },
+      { name: 'Jesús', total: 28, llegada: '100.0%', llegadaClass: 'good', tiempo: '100.0%', tiempoClass: 'good', planta: '85.7%', plantaClass: 'good' },
+      { name: 'Gabriel', total: 28, llegada: '17.9%', llegadaClass: 'bad', tiempo: '35.7%', tiempoClass: 'bad', planta: '10.7%', plantaClass: 'bad' },
+      { name: 'Severo', total: 27, llegada: '88.9%', llegadaClass: 'good', tiempo: '0.0%', tiempoClass: 'bad', planta: '18.5%', plantaClass: 'bad' },
+      { name: 'Diego', total: 25, llegada: '12.0%', llegadaClass: 'bad', tiempo: '80.0%', tiempoClass: 'good', planta: '8.0%', plantaClass: 'bad' },
+      { name: 'Jorge Baracaldo', total: 16, llegada: '87.5%', llegadaClass: 'good', tiempo: '0.0%', tiempoClass: 'bad', planta: '12.5%', plantaClass: 'bad' },
+      { name: 'Georgeth', total: 9, llegada: '44.4%', llegadaClass: 'mid', tiempo: '88.9%', tiempoClass: 'good', planta: '22.2%', plantaClass: 'bad' },
+      { name: 'Ana Cely', total: 9, llegada: '77.8%', llegadaClass: 'good', tiempo: '0.0%', tiempoClass: 'bad', planta: '77.8%', plantaClass: 'good' }
     ]
   };
 
@@ -108,7 +115,10 @@ export class DashexcComponent implements AfterViewInit {
       { label: 'POLAR', data: [48, 0, 0], backgroundColor: '#e2564f' }
     ]);
     this.makeDoughnut('chartTiendas', this.chartTiendasRef.nativeElement, ['Cumple', 'Cumple parcial', 'No cumple'], [314, 117, 498], ['#2dd4bf', '#f2a93c', '#e2564f']);
-    this.makeHBar('chartAgri', this.chartAgriRef.nativeElement, ['Diego', 'Ferrucas', 'Gabriel', 'Georgeth', 'José T.', 'Lechugas'], [16.7, 65.9, 0, 0, 0, 100], ['#e2564f', '#2dd4bf', '#e2564f', '#e2564f', '#e2564f', '#2dd4bf']);
+    this.makeHBar('chartAgri', this.chartAgriRef.nativeElement,
+      ['Ferrucas', 'Andrés Cadena', 'Wilson', 'José T.', 'Mario Acevedo', 'Juan Pablo', 'Jesús', 'Gabriel', 'Severo', 'Diego', 'Jorge Baracaldo', 'Georgeth', 'Ana Cely'],
+      [72.7, 90.5, 90.0, 66.7, 90.0, 90.0, 100.0, 17.9, 88.9, 12.0, 87.5, 44.4, 77.8],
+      ['#2dd4bf', '#2dd4bf', '#2dd4bf', '#f2a93c', '#2dd4bf', '#2dd4bf', '#2dd4bf', '#e2564f', '#2dd4bf', '#e2564f', '#2dd4bf', '#f2a93c', '#2dd4bf']);
   }
 
   // ---------- HELPERS ----------
@@ -450,117 +460,100 @@ export class DashexcComponent implements AfterViewInit {
     }));
   }
 
-  // ---------- PARSER 3: AGRICULTORES ----------
+  // ---------- PARSER 3: AGRICULTORES (MENSUAL) ----------
   parseAgri(wb: any) {
-    const sheetName = this.findSheet(wb, ['RESUMEN']);
-    if (!sheetName) throw new Error('No encontré la hoja "RESUMEN"');
+    const sheetName = this.findSheet(wb, ['TIEMPO AGRICULTORES']);
+    if (!sheetName) throw new Error('No encontré la hoja "TIEMPO AGRICULTORES".');
 
     const rows = this.sheetRows(wb, sheetName);
-    let headerRow = -1;
-    let agriCol = -1;
+    const header = rows[0];
 
-    for (let i = 0; i < rows.length; i++) {
-      if (rows[i]) {
-        for (let j = 0; j < rows[i].length; j++) {
-          if (String(rows[i][j] || '').trim().toUpperCase() === 'AGRICULTOR') {
-            headerRow = i;
-            agriCol = j;
-            break;
-          }
-        }
-      }
-      if (headerRow >= 0) break;
-    }
+    const iMes = this.colIndex(header, 'MES');
+    const iAgricultor = this.colIndex(header, 'AGRICULTOR');
+    const iLlegada = this.colIndex(header, 'CUMPLIMIENTO LLEGADA AGRICULTOR');
+    const iTiempo = this.colIndex(header, 'CUMPLIMIENTO TIEMPO EN AGRICULTOR');
+    const iPlanta = this.colIndex(header, 'CUMPLIMIENTO LLEGADA A PLANTA');
 
-    if (headerRow < 0) throw new Error('No encontré la tabla "Agricultor".');
+    if (iMes < 0 || iAgricultor < 0) throw new Error('No encontré las columnas MES/AGRICULTOR esperadas en "TIEMPO AGRICULTORES".');
 
-    const weekRow = rows[headerRow + 1];
-    const weekCols: number[] = [];
-    for (let c = agriCol + 2; c < weekRow.length; c++) {
-      if (weekRow[c] !== null && weekRow[c] !== undefined && weekRow[c] !== '') {
-        weekCols.push(c);
-      }
-    }
-
-    if (!weekCols.length) throw new Error('No encontré columnas de semana.');
-
-    const nWeeks = Math.floor(weekCols.length / 3);
-    const llegadaCols = weekCols.slice(0, nWeeks);
-    const lastWeekCol = llegadaCols[llegadaCols.length - 1];
-
-    const tiempoCols = weekCols.slice(nWeeks, 2 * nWeeks);
-    const lastTiempoCol = tiempoCols[tiempoCols.length - 1];
-
-    const plantaCols = weekCols.slice(2 * nWeeks, 3 * nWeeks);
-    const lastPlantaCol = plantaCols[plantaCols.length - 1];
-
-    const weekLabel = weekRow[lastWeekCol];
-
-    const toPct = (v: any) => {
-      if (v === null || v === undefined || v === '-') return null;
-      if (typeof v === 'string' && v.trim().endsWith('%')) return parseFloat(v);
-      if (typeof v === 'number') return v <= 1 ? v * 100 : v;
-      return null;
+    const EXCLUIR = ['LECHUGAS DEL DIA', 'LECHUGAS DEL DÍA'];
+    const normName = (s: any) => String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toUpperCase();
+    const displayName = (raw: any): string => {
+      const n = normName(raw);
+      if (n.startsWith('FERRUCAS')) return 'FERRUCAS';
+      return String(raw).trim();
     };
 
-    const agricultores: any[] = [];
-    let r = headerRow + 2;
+    const data = rows.slice(1).filter(r => r && r[iMes] && r[iAgricultor] && !EXCLUIR.includes(normName(r[iAgricultor])));
 
-    while (r < rows.length) {
-      const name = rows[r] && rows[r][agriCol];
-      if (!name) break;
+    const counts: any = {};
+    data.forEach(r => {
+      const m = String(r[iMes]).trim().toUpperCase();
+      counts[m] = (counts[m] || 0) + 1;
+    });
+    const month = this.pickLatestCompleteMonth(counts) || 'JUNIO';
+    const rowsMonth = data.filter(r => String(r[iMes]).trim().toUpperCase() === month);
 
-      const totalViajes = rows[r][lastWeekCol];
-      const pctLlegada = toPct(rows[r + 3] ? rows[r + 3][lastWeekCol] : null);
-      const pctTiempo = toPct(rows[r + 3] ? rows[r + 3][lastTiempoCol] : null);
-      const pctPlanta = toPct(rows[r + 3] ? rows[r + 3][lastPlantaCol] : null);
+    // ---- por agricultor (agrupando FERRUCAS N -> FERRUCAS) ----
+    const agriMap: any = {};
+    rowsMonth.forEach(r => {
+      const name = displayName(r[iAgricultor]);
+      if (!agriMap[name]) agriMap[name] = { viajes: 0, llegadaOk: 0, llegadaTot: 0, tiempoOk: 0, tiempoTot: 0, plantaOk: 0, plantaTot: 0 };
+      agriMap[name].viajes++;
+      const vL = iLlegada >= 0 ? String(r[iLlegada] || '').trim().toUpperCase() : '';
+      if (vL === 'CUMPLE' || vL === 'NO CUMPLE') { agriMap[name].llegadaTot++; if (vL === 'CUMPLE') agriMap[name].llegadaOk++; }
+      const vT = iTiempo >= 0 ? String(r[iTiempo] || '').trim().toUpperCase() : '';
+      if (vT === 'CUMPLE' || vT === 'NO CUMPLE') { agriMap[name].tiempoTot++; if (vT === 'CUMPLE') agriMap[name].tiempoOk++; }
+      const vP = iPlanta >= 0 ? String(r[iPlanta] || '').trim().toUpperCase() : '';
+      if (vP === 'CUMPLE' || vP === 'NO CUMPLE') { agriMap[name].plantaTot++; if (vP === 'CUMPLE') agriMap[name].plantaOk++; }
+    });
 
-      if (typeof totalViajes === 'number') {
-        agricultores.push({
-          name: String(name).trim(),
-          viajes: totalViajes,
-          pctLlegada,
-          pctTiempo,
-          pctPlanta
-        });
-      }
-      r += 4;
-    }
-
-    const totalViajes = agricultores.reduce((s: number, a: any) => s + (a.viajes || 0), 0);
-
-    const weighted = (key: string) => {
-      let num = 0, den = 0;
-      agricultores.forEach((a: any) => {
-        if (a[key] !== null) {
-          num += a[key] * a.viajes;
-          den += a.viajes;
-        }
+    const agricultores = Object.keys(agriMap)
+      .sort((a, b) => agriMap[b].viajes - agriMap[a].viajes)
+      .map(name => {
+        const m = agriMap[name];
+        return {
+          name,
+          viajes: m.viajes,
+          pctLlegada: m.llegadaTot ? m.llegadaOk / m.llegadaTot * 100 : null,
+          pctTiempo: m.tiempoTot ? m.tiempoOk / m.tiempoTot * 100 : null,
+          pctPlanta: m.plantaTot ? m.plantaOk / m.plantaTot * 100 : null
+        };
       });
-      return den ? num / den : null;
+
+    const totalViajes = rowsMonth.length;
+
+    const statFrom = (field: number) => {
+      let ok = 0, tot = 0;
+      rowsMonth.forEach(r => {
+        const v = String(r[field] || '').trim().toUpperCase();
+        if (v === 'CUMPLE' || v === 'NO CUMPLE') { tot++; if (v === 'CUMPLE') ok++; }
+      });
+      return { avg: tot ? ok / tot * 100 : null, count: ok };
     };
 
     return {
-      weekLabel: weekLabel || '',
+      month,
       agricultores,
       totalViajes,
-      avgLlegada: weighted('pctLlegada'),
-      avgTiempo: weighted('pctTiempo'),
-      avgPlanta: weighted('pctPlanta')
+      llegada: statFrom(iLlegada),
+      tiempo: statFrom(iTiempo),
+      planta: statFrom(iPlanta)
     };
   }
 
   renderAgri(d: any, sourceLabel: string) {
-    this.agriState.src = sourceLabel + ' · Semana ' + d.weekLabel + ' (más reciente disponible)';
-    this.agriState.kpiSemanaLabel = 'semana ' + d.weekLabel;
-    this.agriState.tableLabel = 'semana ' + d.weekLabel;
-    this.agriState.chartLabel = '(S' + d.weekLabel + ')';
+    this.agriState.src = sourceLabel + ' · ' + d.month + ' (mes más reciente completo)';
+    this.agriState.note = `Cumplimiento de ${d.totalViajes} registros durante ${d.month.toLowerCase()}, en tres momentos del proceso: llegada del transporte, tiempo en finca y llegada a planta. Los agricultores "FERRUCAS 1" a "FERRUCAS 10" se agrupan en uno solo (FERRUCAS).`;
+    this.agriState.kpiSemanaLabel = d.month.toLowerCase();
+    this.agriState.tableLabel = d.month.toLowerCase();
+    this.agriState.chartLabel = '(' + d.month.toLowerCase() + ')';
     this.agriState.kpiTotal = d.totalViajes;
     this.agriState.kpiTotalSub = d.agricultores.length + ' agricultores';
-    this.agriState.kpiLlegada = this.fmtPct(d.avgLlegada);
-    this.agriState.kpiTiempo = this.fmtPct(d.avgTiempo);
-    this.agriState.kpiPlanta = this.fmtPct(d.avgPlanta);
-    
+    this.agriState.kpiLlegada = this.fmtPct(d.llegada.avg);
+    this.agriState.kpiTiempo = this.fmtPct(d.tiempo.avg);
+    this.agriState.kpiPlanta = this.fmtPct(d.planta.avg);
+
     this.agriState.table = d.agricultores.map((a: any) => ({
       name: a.name,
       total: a.viajes,
