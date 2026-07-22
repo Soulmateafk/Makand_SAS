@@ -226,6 +226,27 @@ tr:last-child td { border-bottom: none; }
 .pill.bad { background: var(--brick-bg); color: var(--brick); }
 .legend-dot { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 6px; }
 
+.chart-empty {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--ink-dim);
+  text-align: center;
+  padding: 0 20px;
+}
+.chart-empty .icon { font-size: 22px; opacity: .5; }
+.chart-empty .msg { font-family: var(--font-mono); font-size: 11.5px; }
+td.empty-row {
+  text-align: center;
+  color: var(--ink-dim);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 22px 10px;
+}
+
 footer {
   padding: 30px 6vw 10px;
   font-family: var(--font-mono);

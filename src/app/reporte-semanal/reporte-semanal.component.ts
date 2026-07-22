@@ -1,4 +1,4 @@
-import { Component, ElementRef, AfterViewInit, ViewChild, signal, computed } from '@angular/core';
+import { Component, ElementRef, AfterViewInit, ViewChild, signal, computed, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import * as XLSX from 'xlsx';
 import Chart from 'chart.js/auto';
@@ -110,6 +110,8 @@ interface AgriData {
 })
 export class ReporteSemanalComponent implements AfterViewInit {
 
+  constructor(private cdr: ChangeDetectorRef) {}
+
   // ---------- refs a los <canvas> ----------
   @ViewChild('chartTransp') chartTranspRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('chartMakandTrend') chartMakandTrendRef!: ElementRef<HTMLCanvasElement>;
@@ -128,9 +130,9 @@ export class ReporteSemanalComponent implements AfterViewInit {
   readonly CURRENT_MONTH_NAME = this.MESES_ORDER[new Date().getMonth()];
 
   // ---------- estado reactivo (signals) ----------
-  makand = signal<MakandData>(this.datosIniciales_makand());
-  tiendas = signal<TiendasData>(this.datosIniciales_tiendas());
-  agri = signal<AgriData>(this.datosIniciales_agri());
+  makand = signal<MakandData | null>(null);
+  tiendas = signal<TiendasData | null>(null);
+  agri = signal<AgriData | null>(null);
 
   fuenteMakand = signal<string>('VIAJEROS_Y_TERCEROS_MAKAND.xlsx');
   fuenteTiendas = signal<string>('ON_TIME_EN_TIENDAS.xlsx');
@@ -140,15 +142,11 @@ export class ReporteSemanalComponent implements AfterViewInit {
   statusTiendas = signal<{msg: string, cls: string}>({msg: '', cls: ''});
   statusAgri = signal<{msg: string, cls: string}>({msg: '', cls: ''});
 
-  transportadorasMakand = computed(() => this.makand().transportadoras);
+  transportadorasMakand = computed(() => this.makand()?.transportadoras ?? []);
 
   ngAfterViewInit(): void {
-    // pequeño delay para asegurar que los <canvas> ya midieron su tamaño en el DOM
-    setTimeout(() => {
-      this.renderMakandCharts(this.makand());
-      this.renderTiendasCharts(this.tiendas());
-      this.renderAgriCharts(this.agri());
-    });
+    // Al iniciar no hay datos aún: cada sección muestra su estado vacío
+    // hasta que el usuario sube un archivo Excel real.
   }
 
   // =========================================================
@@ -184,9 +182,21 @@ export class ReporteSemanalComponent implements AfterViewInit {
     }
     return -1;
   }
-  private pickLatestWeek(counts: Record<number, number>): number | null {
-    const weeks = Object.keys(counts).map(Number).filter(w => !isNaN(w)).sort((a, b) => a - b);
+  // Elige la última semana que esté COMPLETA (verificado con la fecha real mínima/máxima
+  // de esa semana: si abarca al menos 6 días de diferencia, se considera cerrada).
+  // Si ninguna reciente cumple, cae de vuelta a la última disponible.
+  private pickLatestWeek(rowsData: any[][], iSem: number, iFecha: number): number | null {
+    const weeks = [...new Set(rowsData.map(r => Number(r[iSem])))].filter(w => !isNaN(w)).sort((a, b) => a - b);
     if (!weeks.length) return null;
+    if (iFecha < 0) return weeks[weeks.length - 1];
+    for (let i = weeks.length - 1; i >= 0; i--) {
+      const w = weeks[i];
+      const dates = rowsData.filter(r => Number(r[iSem]) === w).map(r => r[iFecha]).filter(v => typeof v === 'number') as number[];
+      if (dates.length) {
+        const span = Math.max(...dates) - Math.min(...dates);
+        if (span >= 6) return w;
+      }
+    }
     return weeks[weeks.length - 1];
   }
 
@@ -211,16 +221,19 @@ export class ReporteSemanalComponent implements AfterViewInit {
           const d = this.parseMakand(wb);
           this.makand.set(d);
           this.fuenteMakand.set(file.name);
+          this.cdr.detectChanges();
           this.renderMakandCharts(d);
         } else if (kind === 'tiendas') {
           const d = this.parseTiendas(wb);
           this.tiendas.set(d);
           this.fuenteTiendas.set(file.name);
+          this.cdr.detectChanges();
           this.renderTiendasCharts(d);
         } else {
           const d = this.parseAgri(wb);
           this.agri.set(d);
           this.fuenteAgri.set(file.name);
+          this.cdr.detectChanges();
           this.renderAgriCharts(d);
         }
         statusSignal.set({ msg: '✓ actualizado ' + new Date().toLocaleString('es-CO'), cls: 'ok' });
@@ -249,13 +262,12 @@ export class ReporteSemanalComponent implements AfterViewInit {
     const iCargue = this.colIndex(header, 'CUMPLIMIENTO CARGUE VEHICULO');
     const iCajas = this.colIndex(header, 'TOTAL CAJAS');
     const iMes = this.colIndex(header, 'MES');
+    const iFecha = this.colIndex(header, 'FECHA DE CARGUE');
     if (iSem < 0 || iTransp < 0) throw new Error('No encontré las columnas SEMANA/TRANSPORTE esperadas.');
 
     const data = rows.slice(1).filter(r => r && r[iSem] !== null && r[iTransp]);
 
-    const counts: Record<number, number> = {};
-    data.forEach(r => { const w = Number(r[iSem]); counts[w] = (counts[w] || 0) + 1; });
-    const week = this.pickLatestWeek(counts);
+    const week = this.pickLatestWeek(data, iSem, iFecha);
     const rowsWeek = data.filter(r => Number(r[iSem]) === week);
 
     const transpMap: Record<string, TransportadoraStat> = {};
@@ -328,12 +340,11 @@ export class ReporteSemanalComponent implements AfterViewInit {
     const iRegion = this.colIndex(header, 'REGIÓN');
     const iCedi = this.colIndex(header, 'CEDI');
     const iMes = this.colIndex(header, 'MES');
+    const iFecha = this.colIndex(header, 'FECHA');
     if (iSem < 0 || iCump < 0) throw new Error('No encontré las columnas SEMANA/CUMPLIMIENTO esperadas.');
 
     const data = rows.slice(1).filter(r => r && r[iSem] !== null);
-    const counts: Record<number, number> = {};
-    data.forEach(r => { const w = Number(r[iSem]); counts[w] = (counts[w] || 0) + 1; });
-    const week = this.pickLatestWeek(counts);
+    const week = this.pickLatestWeek(data, iSem, iFecha);
     const rowsWeek = data.filter(r => Number(r[iSem]) === week);
 
     const dist: Record<string, number> = {};
@@ -410,6 +421,7 @@ export class ReporteSemanalComponent implements AfterViewInit {
     const iTiempo = this.colIndex(header, 'CUMPLIMIENTO TIEMPO EN AGRICULTOR');
     const iPlanta = this.colIndex(header, 'CUMPLIMIENTO LLEGADA A PLANTA');
     const iMes = this.colIndex(header, 'MES');
+    const iFecha = this.colIndex(header, 'FECHA');
     if (iSem < 0 || iAgricultor < 0) throw new Error('No encontré las columnas SEMANA/AGRICULTOR esperadas en "TIEMPO AGRICULTORES".');
 
     const EXCLUIR = ['LECHUGAS DEL DIA', 'LECHUGAS DEL DÍA'];
@@ -422,9 +434,7 @@ export class ReporteSemanalComponent implements AfterViewInit {
 
     const data = rows.slice(1).filter(r => r && r[iSem] !== null && r[iAgricultor] && !EXCLUIR.includes(normName(r[iAgricultor])));
 
-    const counts: Record<number, number> = {};
-    data.forEach(r => { const w = Number(r[iSem]); counts[w] = (counts[w] || 0) + 1; });
-    const week = this.pickLatestWeek(counts);
+    const week = this.pickLatestWeek(data, iSem, iFecha);
     const rowsWeek = data.filter(r => Number(r[iSem]) === week);
 
     // ---- por agricultor (agrupando FERRUCAS N -> FERRUCAS) ----
@@ -516,7 +526,13 @@ export class ReporteSemanalComponent implements AfterViewInit {
   // =========================================================
   //  RENDER DE GRÁFICAS (Chart.js)
   // =========================================================
+  private hideEmpty(canvas: HTMLCanvasElement): void {
+    const empty = canvas.parentElement?.querySelector('.chart-empty') as HTMLElement | null;
+    if (empty) empty.style.display = 'none';
+  }
+
   private makeDoughnut(canvas: HTMLCanvasElement, id: string, labels: string[], data: number[], colors: string[]): void {
+    this.hideEmpty(canvas);
     this.charts[id]?.destroy();
     this.charts[id] = new Chart(canvas, {
       type: 'doughnut',
@@ -526,6 +542,7 @@ export class ReporteSemanalComponent implements AfterViewInit {
   }
 
   private makeHBar(canvas: HTMLCanvasElement, id: string, labels: string[], data: number[], colors: string[]): void {
+    this.hideEmpty(canvas);
     this.charts[id]?.destroy();
     this.charts[id] = new Chart(canvas, {
       type: 'bar',
@@ -539,6 +556,7 @@ export class ReporteSemanalComponent implements AfterViewInit {
   }
 
   private makeLine(canvas: HTMLCanvasElement, id: string, labels: string[], datasets: any[], dualAxis: boolean): void {
+    this.hideEmpty(canvas);
     this.charts[id]?.destroy();
     const scales: any = dualAxis ? {
       x: { grid: { display: false } },
@@ -614,101 +632,4 @@ export class ReporteSemanalComponent implements AfterViewInit {
     if (d.monthly) this.renderMonthly(this.chartAgriMesRef.nativeElement, 'chartAgriMes', d.monthly, 'Registros', '% Cumple llegada');
   }
 
-  // =========================================================
-  //  DATOS INICIALES (placeholder antes de subir un archivo)
-  //  Reemplaza estos valores por los de tu último reporte real,
-  //  o simplemente sube un archivo apenas cargue la página.
-  // =========================================================
-  private datosIniciales_makand(): MakandData {
-    return {
-      week: 28, total: 51,
-      transportadoras: ['MAKAND', 'ARSITRANS', 'POLAR'],
-      transpMap: {
-        MAKAND:    { total: 23, llegadaOk: 21, cargueOk: 13, cajas: 10500, almacenes: { D1: 16, ARA: 1, ÉXITO: 5, OLIMPICA: 1 } },
-        ARSITRANS: { total: 17, llegadaOk: 11, cargueOk: 8,  cajas: 8552,  almacenes: { D1: 10, ARA: 4, ÉXITO: 3 } },
-        POLAR:     { total: 11, llegadaOk: 6,  cargueOk: 9,  cajas: 2939,  almacenes: { D1: 11 } }
-      },
-      almacenes: ['D1', 'ARA', 'ÉXITO', 'OLIMPICA'],
-      overallLlegada: 74.5, totalCajas: 21991, lider: 'MAKAND', liderPct: 45.1,
-      trend: {
-        weeks: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28],
-        total: [24,53,49,49,51,45,56,53,51,57,57,58,58,49,62,67,55,60,63,61,60,64,57,58,58,65,56,51],
-        llegada: [100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,93.3,73.0,75.4,85.0,79.7,82.5,81.0,79.3,76.9,91.1,74.5]
-      },
-      monthly: {
-        meses: ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO'],
-        total: [226,205,253,255,266,258,84],
-        pct: [100,100,100,100,77.8,80.6,82.1]
-      }
-    };
-  }
-
-  private datosIniciales_tiendas(): TiendasData {
-    return {
-      week: 28, total: 213,
-      dist: { 'CUMPLE': 84, 'CUMPLE PARCIAL': 28, 'NO CUMPLE': 101 },
-      cediMap: { 'Tiendas': 140, 'CEDI 2': 46, 'CEDI ARA': 14, 'CEDI 1': 13 },
-      cedis: ['Tiendas', 'CEDI 2', 'CEDI ARA', 'CEDI 1'],
-      regionMap: {
-        'PLATAFORMA SIBERIA': { total: 16, cumple: 16 },
-        'OLIMPICA': { total: 8, cumple: 1 },
-        'ARA COTA': { total: 8, cumple: 1 },
-        'PLATAFORMA CENCOSUD': { total: 7, cumple: 2 },
-        'D1 TOCANCIPA': { total: 7, cumple: 4 },
-        'JUMBO SANTA ANA': { total: 7, cumple: 0 },
-        'D1 SIBATE -': { total: 6, cumple: 0 },
-        'ARA GACHANCIPA': { total: 6, cumple: 0 },
-        'CARULLA PEPE SIERRA': { total: 6, cumple: 2 },
-        'CARULLA SANTA BARBARA': { total: 6, cumple: 0 }
-      },
-      topRegiones: ['PLATAFORMA SIBERIA', 'OLIMPICA', 'ARA COTA', 'PLATAFORMA CENCOSUD', 'D1 TOCANCIPA', 'JUMBO SANTA ANA', 'D1 SIBATE -', 'ARA GACHANCIPA', 'CARULLA PEPE SIERRA', 'CARULLA SANTA BARBARA'],
-      trend: {
-        weeks: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29],
-        cumple: [32.5,38.9,37.1,32.0,39.6,40.1,42.6,40.0,43.3,35.1,39.5,36.8,38.6,29.7,40.3,40.3,40.1,27.0,33.5,39.6,32.2,31.5,34.3,38.2,31.0,31.0,34.3,39.4,37.9],
-        parcial: [25.0,13.0,16.9,13.6,11.9,11.2,13.2,15.2,7.8,16.0,12.0,10.4,11.1,12.3,13.1,10.0,7.8,14.3,11.3,10.7,15.6,13.2,14.3,9.8,10.3,12.5,14.8,13.1,10.7],
-        noCumple: [42.5,48.1,46.0,54.4,48.5,48.7,44.1,44.8,48.9,48.9,48.5,52.7,50.3,58.0,46.6,49.8,50.0,56.6,55.2,49.7,52.2,55.3,51.4,52.0,58.7,56.5,51.0,47.4,51.5],
-        total: [138,206,201,192,196,194,197,205,197,210,204,184,200,210,104,197,196,199,205,201,197,204,199,201,203,207,210,213,103]
-      },
-      monthly: {
-        meses: ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO'],
-        total: [877,813,854,803,864,857,461],
-        pct: [36.7,41.9,37.2,36.9,33.6,33.0,39.3]
-      }
-    };
-  }
-
-  private datosIniciales_agri(): AgriData {
-    return {
-      weekLabel: '28',
-      agricultores: [
-        { name: 'Ferrucas', viajes: 37, pctLlegada: 89.2, pctTiempo: 13.5, pctPlanta: 45.9 },
-        { name: 'Andres Cadena', viajes: 7, pctLlegada: 100.0, pctTiempo: 0.0, pctPlanta: 16.7 },
-        { name: 'Juan Pablo', viajes: 7, pctLlegada: 100.0, pctTiempo: 0.0, pctPlanta: 83.3 },
-        { name: 'Jesús', viajes: 7, pctLlegada: 100.0, pctTiempo: 100.0, pctPlanta: 100.0 },
-        { name: 'Severo', viajes: 7, pctLlegada: 100.0, pctTiempo: 0.0, pctPlanta: 0.0 },
-        { name: 'Wilson', viajes: 7, pctLlegada: 100.0, pctTiempo: 0.0, pctPlanta: 33.3 },
-        { name: 'Jose Tibaquicha', viajes: 7, pctLlegada: 71.4, pctTiempo: 16.7, pctPlanta: 33.3 },
-        { name: 'Gabriel', viajes: 6, pctLlegada: 16.7, pctTiempo: 60.0, pctPlanta: 0.0 },
-        { name: 'Diego', viajes: 6, pctLlegada: 16.7, pctTiempo: 40.0, pctPlanta: 0.0 },
-        { name: 'Georgeth', viajes: 2, pctLlegada: 50.0, pctTiempo: 0.0, pctPlanta: 0.0 },
-        { name: 'Mario Acevedo', viajes: 7, pctLlegada: 100.0, pctTiempo: 0.0, pctPlanta: 83.3 },
-        { name: 'Jorge Baracaldo', viajes: 1, pctLlegada: 100.0, pctTiempo: 0.0, pctPlanta: 0.0 }
-      ],
-      totalViajes: 101,
-      llegada: { avg: 83.2, count: 84 },
-      tiempo: { avg: 18.5, count: 17 },
-      planta: { avg: 41.3, count: 38 },
-      trend: {
-        weeks: ['1','2','13','14','15','16','17','18','19','20','21','22','23','24','25','26','27','28','29'],
-        llegada: [78.6,71.4,74.5,51.3,56.2,40.3,41.3,31.1,33.3,38.1,27.6,44.1,52.5,79.5,73.0,86.0,80.5,83.0,93.1],
-        tiempo: [21.4,28.6,25.5,30.8,34.4,29.0,45.7,27.0,18.9,21.2,24.1,23.0,29.5,25.9,32.2,32.2,23.0,21.6,null],
-        planta: [37.5,53.8,54.3,35.8,35.6,32.2,36.5,27.6,32.7,37.8,34.2,37.2,32.8,32.1,30.4,34.7,41.4,39.2,null]
-      },
-      monthly: {
-        meses: ['ENERO','MARZO','ABRIL','MAYO','JUNIO','JULIO'],
-        total: [40,149,477,543,504,202],
-        pct: [76.2,64.9,45.2,35.5,74.0,84.2]
-      }
-    };
-  }
 }
