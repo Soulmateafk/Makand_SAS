@@ -809,10 +809,14 @@ export class DashexcComponent implements AfterViewInit {
   }
 
   // Normaliza el valor de una celda "MES": puede venir como texto ('JUNIO'), como
-  // número de mes directo (1-12), o -si la celda está formateada como fecha- como
-  // número de serie de Excel. En los dos últimos casos lo convertimos al nombre del mes.
+  // número de mes directo (1-12), como número de serie de Excel (fecha), o como
+  // objeto Date de JS (cuando se lee con cellDates:true). En todos los casos
+  // lo convertimos al nombre del mes correspondiente.
   normMes(v: any): string {
     if (v === null || v === undefined || v === '') return '';
+    if (v instanceof Date) {
+      return this.MESES_ORDER[v.getMonth()] || '';
+    }
     if (typeof v === 'number') {
       if (v >= 1 && v <= 12 && Number.isInteger(v)) return this.MESES_ORDER[v - 1] || '';
       const utcDays = Math.floor(v - 25569);
@@ -820,6 +824,18 @@ export class DashexcComponent implements AfterViewInit {
       return this.MESES_ORDER[d.getUTCMonth()] || '';
     }
     return String(v).trim().toUpperCase();
+  }
+
+  // Obtiene el mes de una fila priorizando la columna FECHA (más confiable) y usando
+  // la columna MES solo como respaldo si no hay columna de fecha disponible. Esto
+  // evita fallos cuando la columna "mes" viene mal formateada (por ejemplo, guardada
+  // como solo la hora "00:00:00" en vez de una fecha real).
+  rowMonth(r: any[], iFecha: number, iMes: number): string {
+    if (iFecha >= 0 && r[iFecha] !== null && r[iFecha] !== undefined && r[iFecha] !== '') {
+      const m = this.normMes(r[iFecha]);
+      if (m) return m;
+    }
+    return this.normMes(r[iMes]);
   }
 
   // =========================================================
@@ -2591,6 +2607,12 @@ export class DashexcComponent implements AfterViewInit {
         'MES'
       );
 
+    const iFecha =
+      this.colIndex(
+        header,
+        'FECHA'
+      );
+
     const iAgricultor =
       this.colIndex(
         header,
@@ -2718,7 +2740,7 @@ export class DashexcComponent implements AfterViewInit {
       r => {
 
         const m =
-          this.normMes(r[iMes]);
+        this.rowMonth(r, iFecha, iMes);
 
         counts[m] =
           (
@@ -2746,7 +2768,7 @@ export class DashexcComponent implements AfterViewInit {
     const rowsMonth =
       data.filter(
         r =>
-          this.normMes(r[iMes]) ===
+          this.rowMonth(r, iFecha, iMes) ===
           month
       );
 
@@ -3059,7 +3081,7 @@ export class DashexcComponent implements AfterViewInit {
         ...new Set(
           data.map(
             r =>
-              this.normMes(r[iMes])
+              this.rowMonth(r, iFecha, iMes)
           )
         )
       ]
@@ -3099,7 +3121,7 @@ export class DashexcComponent implements AfterViewInit {
         const registrosMes =
           data.filter(
             r =>
-              this.normMes(r[iMes]) ===
+              this.rowMonth(r, iFecha, iMes) ===
               mes
           );
 
