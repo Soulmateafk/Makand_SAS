@@ -162,6 +162,20 @@ export class DashexcComponent implements AfterViewInit {
     return chosen;
   }
 
+  // Normaliza el valor de una celda "MES": puede venir como texto ('JUNIO'), como
+  // número de mes directo (1-12), o -si la celda está formateada como fecha- como
+  // número de serie de Excel. En los dos últimos casos lo convertimos al nombre del mes.
+  normMes(v: any): string {
+    if (v === null || v === undefined || v === '') return '';
+    if (typeof v === 'number') {
+      if (v >= 1 && v <= 12 && Number.isInteger(v)) return this.MESES_ORDER[v - 1] || '';
+      const utcDays = Math.floor(v - 25569);
+      const d = new Date(utcDays * 86400 * 1000);
+      return this.MESES_ORDER[d.getUTCMonth()] || '';
+    }
+    return String(v).trim().toUpperCase();
+  }
+
   // ---------- CREADORES DE GRÁFICAS ----------
   makeDoughnut(id: string, canvasRef: any, labels: any, data: any, colors: any) {
   if (this.charts[id]) this.charts[id].destroy();
@@ -282,12 +296,12 @@ export class DashexcComponent implements AfterViewInit {
     const data = rows.slice(1).filter(r => r && r[iMes] && r[iTransp]);
     const counts: any = {};
     data.forEach(r => {
-      const m = String(r[iMes]).trim().toUpperCase();
+      const m = this.normMes(r[iMes]);
       counts[m] = (counts[m] || 0) + 1;
     });
 
     const month = this.pickLatestCompleteMonth(counts) || 'JUNIO';
-    const rowsMonth = data.filter(r => String(r[iMes]).trim().toUpperCase() === month);
+    const rowsMonth = data.filter(r => this.normMes(r[iMes]) === month);
 
     const transpMap: any = {};
     const almacenSet = new Set<string>();
@@ -382,12 +396,12 @@ export class DashexcComponent implements AfterViewInit {
     const data = rows.slice(1).filter(r => r && r[iMes]);
     const counts: any = {};
     data.forEach(r => {
-      const m = String(r[iMes]).trim().toUpperCase();
+      const m = this.normMes(r[iMes]);
       counts[m] = (counts[m] || 0) + 1;
     });
 
     const month = this.pickLatestCompleteMonth(counts) || 'JUNIO';
-    const rowsMonth = data.filter(r => String(r[iMes]).trim().toUpperCase() === month);
+    const rowsMonth = data.filter(r => this.normMes(r[iMes]) === month);
 
     const dist: any = {};
     const cediMap: any = {};
@@ -488,11 +502,11 @@ export class DashexcComponent implements AfterViewInit {
 
     const counts: any = {};
     data.forEach(r => {
-      const m = String(r[iMes]).trim().toUpperCase();
+      const m = this.normMes(r[iMes]);
       counts[m] = (counts[m] || 0) + 1;
     });
     const month = this.pickLatestCompleteMonth(counts) || 'JUNIO';
-    const rowsMonth = data.filter(r => String(r[iMes]).trim().toUpperCase() === month);
+    const rowsMonth = data.filter(r => this.normMes(r[iMes]) === month);
 
     // ---- por agricultor (agrupando FERRUCAS N -> FERRUCAS) ----
     const agriMap: any = {};
